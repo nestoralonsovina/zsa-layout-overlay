@@ -48,9 +48,11 @@ struct KeycapCard: View {
                 }
 
                 if let icon = key.labels.icon, !icon.isEmpty {
-                    Text(displayIcon(icon))
-                        .font(.custom(sansBoldFont, size: DesignTokens.FontSize.keyGlyph))
+                    let display = displayIcon(icon)
+                    Text(display)
+                        .font(.custom(sansBoldFont, size: specialFontSize(for: display, emphasize: iconOnlyKey)))
                         .foregroundStyle(textColor.opacity(DesignTokens.Opacity.keycapText))
+                        .frame(maxWidth: .infinity, alignment: iconOnlyKey ? .center : .leading)
                 }
 
                 renderStep(key.labels.bottom, position: .bottom, twoLabels: key.labels.bottom != nil)
@@ -68,6 +70,10 @@ struct KeycapCard: View {
 
     private var singleActionKey: Bool {
         key.labels.bottom == nil
+    }
+
+    private var iconOnlyKey: Bool {
+        singleActionKey && key.labels.top == nil && (key.labels.icon?.isEmpty == false)
     }
 
     private func fontSize(for label: String, emphasize: Bool) -> CGFloat {
@@ -93,6 +99,21 @@ struct KeycapCard: View {
         shouldEmphasize(step, twoLabels: twoLabels) ? .center : .leading
     }
 
+    private func specialFontSize(for text: String, emphasize: Bool) -> CGFloat {
+        switch text.count {
+        case 0...2:
+            return emphasize ? DesignTokens.FontSize.keyLabelXL : DesignTokens.FontSize.keyGlyph
+        case 3...6:
+            return emphasize ? DesignTokens.FontSize.keyLabelM : DesignTokens.FontSize.keyGlyph
+        default:
+            return emphasize ? DesignTokens.FontSize.keyLabelS : DesignTokens.FontSize.keyGlyph
+        }
+    }
+
+    private func shouldEmphasizeGlyph(_ step: RenderedLabelStep, twoLabels: Bool) -> Bool {
+        !twoLabels && step.tag == nil && step.modifiers == nil && step.layer == nil
+    }
+
     @ViewBuilder
     private func renderStep(_ step: RenderedLabelStep?, position: LabelPosition, twoLabels: Bool) -> some View {
         if let step {
@@ -113,10 +134,12 @@ struct KeycapCard: View {
                     .foregroundStyle(textColor)
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
             } else if let glyph = step.glyph {
-                Text(String.safeText(glyphDisplay(glyph, layer: step.layer)))
-                    .font(.custom(sansBoldFont, size: DesignTokens.FontSize.keyGlyph))
+                let display = String.safeText(glyphDisplay(glyph, layer: step.layer))
+                let emphasize = shouldEmphasizeGlyph(step, twoLabels: twoLabels)
+                Text(display)
+                    .font(.custom(sansBoldFont, size: specialFontSize(for: display, emphasize: emphasize)))
                     .foregroundStyle(textColor)
-                    .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
+                    .frame(maxWidth: .infinity, alignment: emphasize ? .center : textAlignment(for: step, twoLabels: twoLabels))
             } else if let modifiers = step.modifiers, !step.label.isEmpty {
                 Text(String.safeText("\(modifiers)+\(step.label)"))
                     .font(.custom(keyFont, size: modifierFontSize(for: modifiers)))

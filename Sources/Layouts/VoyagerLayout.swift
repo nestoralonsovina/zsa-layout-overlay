@@ -4,6 +4,9 @@ enum VoyagerLayout {
     static let keyWidth: CGFloat = 66
     static let keyHeight: CGFloat = 66
     static let gap: CGFloat = 6
+    static let thumbTopY: CGFloat = 248
+    static let leftThumbX: CGFloat = 518
+    static let rightThumbX: CGFloat = 836
 
     static var voyagerPhysicalKeyCount: Int { keySpecs.count }
 
@@ -46,8 +49,8 @@ enum VoyagerLayout {
         KeySpec(id: "L34", frame: rect(26 + 4 * (keyWidth + gap), 32 + 3 * (keyHeight + gap)), rotation: 0),
         KeySpec(id: "L35", frame: rect(26 + 5 * (keyWidth + gap), 32 + 3 * (keyHeight + gap)), rotation: 0),
 
-        KeySpec(id: "LT0", frame: rect(520, 355), rotation: -30),
-        KeySpec(id: "LT1", frame: rect(566, 406), rotation: 28),
+        KeySpec(id: "LT0", frame: rect(leftThumbX, thumbTopY), rotation: 0),
+        KeySpec(id: "LT1", frame: rect(leftThumbX, thumbTopY + keyHeight + gap), rotation: 0),
 
         KeySpec(id: "R00", frame: rect(930, 24), rotation: 0),
         KeySpec(id: "R01", frame: rect(930 + 1 * (keyWidth + gap), 24), rotation: 0),
@@ -77,7 +80,7 @@ enum VoyagerLayout {
         KeySpec(id: "R34", frame: rect(930 + 4 * (keyWidth + gap), 32 + 3 * (keyHeight + gap)), rotation: 0),
         KeySpec(id: "R35", frame: rect(930 + 5 * (keyWidth + gap), 32 + 3 * (keyHeight + gap)), rotation: 0),
 
-        KeySpec(id: "RT0", frame: rect(878, 408), rotation: -28),
-        KeySpec(id: "RT1", frame: rect(825, 356), rotation: 28)
+        KeySpec(id: "RT0", frame: rect(rightThumbX, thumbTopY + keyHeight + gap), rotation: 0),
+        KeySpec(id: "RT1", frame: rect(rightThumbX, thumbTopY), rotation: 0)
     ]
 }
