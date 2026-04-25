@@ -518,5 +518,8 @@ private let metadataCodeAliases: [String: String] = [
     "KC_DEL": "KC_DELETE",
     "KC_INS": "KC_INSERT",
     "KC_QUOT": "KC_QUOTE",
-    "KC_GRV": "KC_GRAVE"
+    "KC_GRV": "KC_GRAVE",
+    "KC_LBRC": "KC_LBRACKET",
+    "KC_RBRC": "KC_RBRACKET",
+    "KC_BSLS": "KC_BSLASH"
 ]

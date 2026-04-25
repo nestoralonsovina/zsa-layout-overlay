@@ -1,9 +1,9 @@
 import Foundation
 import ZSAHIDBridge
 
-@MainActor
-final class ZSAHIDDataSource: KeyboardDataSource {
+final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
     var onError: ((ErrorState) -> Void)?
+    private let eventLoggingEnabled = false
     private let voyagerMatrix: [[Int]] = [
         [-1, 0, 1, 2, 3, 4, 5],
         [-1, 6, 7, 8, 9, 10, 11],
@@ -25,16 +25,17 @@ final class ZSAHIDDataSource: KeyboardDataSource {
     private var activeLayerIndex = 0
     private var pressedKeyIndices: Set<Int> = []
 
+    @MainActor
     func start(feeding model: OverlayViewModel) async {
         self.model = model
         log("Starting hidapi live bridge")
-        setStatus(connectionState: "waiting for voyager", statusText: "Waiting for a ZSA Voyager hidapi connection.")
+        await setStatus(connectionState: "waiting for voyager", statusText: "Waiting for a ZSA Voyager hidapi connection.")
 
         guard let bridge else {
             let opened = zsa_hid_bridge_open_first_voyager()
             guard let opened else {
-                setStatus(connectionState: "bridge init failed", statusText: "Failed to initialize hidapi bridge.")
-                onError?(.error("Failed to initialize hidapi bridge"))
+                await setStatus(connectionState: "bridge init failed", statusText: "Failed to initialize hidapi bridge.")
+                await reportError(.error("Failed to initialize hidapi bridge"))
                 return
             }
             self.bridge = opened
@@ -46,27 +47,43 @@ final class ZSAHIDDataSource: KeyboardDataSource {
                 log("Handshake [1] failed: \(lastError(from: opened))")
             }
             logInitialFeatureReports(from: opened)
-            setStatus(connectionState: "voyager connected", statusText: "Voyager connected through hidapi. Listening for live reports.")
-            onError?(.none)
-            await readLoop(using: opened)
+            await setStatus(connectionState: "voyager connected", statusText: "Voyager connected through hidapi. Listening for live reports.")
+            await reportError(.none)
+            await runReadLoop(using: opened)
             return
         }
 
-        await readLoop(using: bridge)
+        await runReadLoop(using: bridge)
     }
 
-    private func readLoop(using bridge: BridgeRef) async {
+    private func runReadLoop(using bridge: BridgeRef) async {
+        let bridgeAddress = UInt(bitPattern: bridge)
+        let readTask = Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            await self.readLoop(usingBridgeAddress: bridgeAddress)
+        }
+
+        await withTaskCancellationHandler {
+            await readTask.value
+        } onCancel: {
+            readTask.cancel()
+        }
+    }
+
+    private func readLoop(usingBridgeAddress bridgeAddress: UInt) async {
+        guard let bridge = UnsafeMutableRawPointer(bitPattern: bridgeAddress) else { return }
+
         while !Task.isCancelled {
             var buffer = Array(repeating: UInt8(0), count: 32)
             let count = buffer.withUnsafeMutableBufferPointer { pointer in
-                zsa_hid_bridge_read_timeout(bridge, pointer.baseAddress, Int32(pointer.count), 100)
+                zsa_hid_bridge_read_timeout(bridge, pointer.baseAddress, Int32(pointer.count), 10)
             }
 
             if count < 0 {
                 let message = lastError(from: bridge)
                 log("Read failed: \(message)")
-                setStatus(connectionState: "read failed", statusText: "hidapi read failed: \(message)")
-                onError?(.error("hidapi read failed: \(message)"))
+                await setStatus(connectionState: "read failed", statusText: "hidapi read failed: \(message)")
+                await reportError(.error("hidapi read failed: \(message)"))
                 break
             }
 
@@ -75,11 +92,11 @@ final class ZSAHIDDataSource: KeyboardDataSource {
                 continue
             }
 
-            handle(report: Array(buffer.prefix(Int(count))))
+            await handle(report: Array(buffer.prefix(Int(count))))
         }
     }
 
-    private func handle(report: [UInt8]) {
+    private func handle(report: [UInt8]) async {
         let payload = trimmedPayload(from: report)
         guard let opcode = payload.first else { return }
         let bytes = Array(payload.dropFirst())
@@ -88,31 +105,39 @@ final class ZSAHIDDataSource: KeyboardDataSource {
         case 0:
             if let descriptor = String(bytes: bytes, encoding: .utf8) {
                 log("Descriptor -> \(descriptor)")
-                setStatus(connectionState: "streaming live state", statusText: "Voyager connected. Layout descriptor \(descriptor).")
+                await setStatus(connectionState: "streaming live state", statusText: "Voyager connected. Layout descriptor \(descriptor).")
             }
         case 5:
             guard let layer = bytes.first else { return }
             activeLayerIndex = Int(layer)
-            log("Layer -> \(activeLayerIndex)")
-            pushLiveState()
+            if eventLoggingEnabled {
+                log("Layer -> \(activeLayerIndex)")
+            }
+            await pushLiveState()
         case 6:
             guard let keyIndex = decodeKeyIndex(from: bytes) else {
                 log("Key down payload undecoded: \(hexDump(report))")
                 return
             }
             pressedKeyIndices.insert(keyIndex)
-            log("Key down -> physical index \(keyIndex)")
-            pushLiveState()
+            if eventLoggingEnabled {
+                log("Key down -> physical index \(keyIndex)")
+            }
+            await pushLiveState()
         case 7:
             guard let keyIndex = decodeKeyIndex(from: bytes) else {
                 log("Key up payload undecoded: \(hexDump(report))")
                 return
             }
             pressedKeyIndices.remove(keyIndex)
-            log("Key up -> physical index \(keyIndex)")
-            pushLiveState()
+            if eventLoggingEnabled {
+                log("Key up -> physical index \(keyIndex)")
+            }
+            await pushLiveState()
         default:
-            log("Unhandled report -> \(hexDump(report))")
+            if eventLoggingEnabled {
+                log("Unhandled report -> \(hexDump(report))")
+            }
         }
     }
 
@@ -136,20 +161,34 @@ final class ZSAHIDDataSource: KeyboardDataSource {
         return index
     }
 
-    private func pushLiveState() {
-        model?.applyLiveState(
-            KeyboardLiveState(
-                sourceName: "zsa-hidapi",
-                connectionState: "streaming live state",
-                activeLayerIndex: activeLayerIndex,
-                pressedKeyIndices: pressedKeyIndices,
-                statusText: "Voyager connected. Layer \(activeLayerIndex) with \(pressedKeyIndices.count) pressed key(s)."
+    private func pushLiveState() async {
+        let activeLayerIndex = activeLayerIndex
+        let pressedKeyIndices = pressedKeyIndices
+        let statusText = "Voyager connected. Layer \(activeLayerIndex) with \(pressedKeyIndices.count) pressed key(s)."
+
+        await MainActor.run {
+            model?.applyLiveState(
+                KeyboardLiveState(
+                    sourceName: "zsa-hidapi",
+                    connectionState: "streaming live state",
+                    activeLayerIndex: activeLayerIndex,
+                    pressedKeyIndices: pressedKeyIndices,
+                    statusText: statusText
+                )
             )
-        )
+        }
     }
 
-    private func setStatus(connectionState: String, statusText: String) {
-        model?.applyStatus(sourceName: "zsa-hidapi", connectionState: connectionState, statusText: statusText)
+    private func setStatus(connectionState: String, statusText: String) async {
+        await MainActor.run {
+            model?.applyStatus(sourceName: "zsa-hidapi", connectionState: connectionState, statusText: statusText)
+        }
+    }
+
+    private func reportError(_ state: ErrorState) async {
+        await MainActor.run {
+            onError?(state)
+        }
     }
 
     private func logInitialFeatureReports(from bridge: BridgeRef) {
