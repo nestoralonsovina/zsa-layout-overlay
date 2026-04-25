@@ -8,6 +8,7 @@ final class OverlayAppController {
     private var captureDataSource: KeyboardDataSource?
     private var liveDataSource: KeyboardDataSource
     private var windowController: OverlayWindowController?
+    private var activeTask: Task<Void, Never>?
 
     init() {
         if let harPath = Self.resolvedHARPath() {
@@ -39,7 +40,7 @@ final class OverlayAppController {
         windowController = OverlayWindowController(model: model)
         windowController?.showWindow()
 
-        Task {
+        activeTask = Task {
             keymappProbe.onError = { [weak model] state in
                 model?.reportError(state)
             }
@@ -53,6 +54,33 @@ final class OverlayAppController {
             await captureDataSource?.start(feeding: model)
             await liveDataSource.start(feeding: model)
         }
+    }
+
+    func showWindow() {
+        windowController?.showWindow()
+    }
+
+    func hideWindow() {
+        windowController?.hideWindow()
+    }
+
+    func restart() {
+        activeTask?.cancel()
+        activeTask = nil
+        windowController?.hideWindow()
+        windowController = nil
+        model.reset()
+
+        keymappProbe = KeymappProbeDataSource()
+        if let harPath = Self.resolvedHARPath() {
+            captureDataSource = OryxHARDataSource(harPath: harPath)
+            liveDataSource = ZSAHIDDataSource()
+        } else {
+            captureDataSource = nil
+            liveDataSource = MockKeyboardDataSource()
+        }
+
+        start()
     }
 }
 
@@ -94,5 +122,9 @@ final class OverlayWindowController {
 
     func showWindow() {
         window.orderFrontRegardless()
+    }
+
+    func hideWindow() {
+        window.orderOut(nil)
     }
 }

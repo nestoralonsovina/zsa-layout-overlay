@@ -147,4 +147,3 @@ enum OverlayLayouts {
         return capture.layers[fallbackIndex]
     }
 }
-

@@ -99,6 +99,45 @@
           "files_touched": []
         }
       ]
+    },
+    {
+      "id": 3,
+      "name": "Menu Bar & Build System",
+      "status": "complete",
+      "tasks": [
+        {
+          "id": "3.1",
+          "phase": 3,
+          "status": "completed",
+          "size": "small",
+          "description": "Add Makefile at repo root with .PHONY build, run, clean, install, lint targets wrapping swift build/run/swiftlint. Add .swiftlint.yml with basic config (opt_in_rules: empty_string, redundant_nil_coalescing). make lint runs swiftlint --quiet or prints skip message if swiftlint not installed.",
+          "depends": [],
+          "acceptance": "Makefile exists at repo root with 5 .PHONY targets. make build runs swift build. make run runs swift run. make clean removes .build/. make install copies binary to /usr/local/bin. make lint runs swiftlint or prints 'swiftlint not installed, skipping'.",
+          "files_touched": []
+        },
+        {
+          "id": "3.2",
+          "phase": 3,
+          "status": "completed",
+          "size": "medium",
+          "description": "Add NSStatusItem menu bar icon using SF Symbol 'keyboard' with Show/Hide Overlay, Restart, and Quit menu items. Create MenuBarController managing status item lifecycle. Change applicationShouldTerminateAfterLastWindowClosed to false so hiding window does not kill app. Wire Show/Hide to toggle window visibility. Wire Quit to NSApp.terminate. Wire Restart to call OverlayAppController.restart().",
+          "depends": [
+            "3.3"
+          ],
+          "acceptance": "Status bar item with keyboard icon visible near battery. Menu has Show/Hide Overlay (toggles with checkmark), Restart (cancels/reinits data sources), Quit (terminates). Hiding overlay window does not quit app. App visible only in menu bar, no dock icon.",
+          "files_touched": []
+        },
+        {
+          "id": "3.3",
+          "phase": 3,
+          "status": "completed",
+          "size": "medium",
+          "description": "Create git checkpoint. Add stored Task? handle to OverlayAppController for cancellation. Add restart() that cancels active Task, reinitializes data sources, clears errors, and starts fresh. Add reset() to OverlayViewModel clearing capture, pressedKeyIndices, activeErrors, restoring fallback status. Add hideWindow() to OverlayWindowController calling orderOut(nil).",
+          "depends": [],
+          "acceptance": "OverlayAppController has private var dataTask for cancellation. restart() cancels dataTask, recreates data sources, calls model.reset(), starts new dataTask. ViewModel.reset() clears capture, pressedKeyIndices, activeErrors, sets statusText=Ready. OverlayWindowController.hideWindow() hides window. swift build succeeds.",
+          "files_touched": []
+        }
+      ]
     }
   ],
   "migration_status": "native",

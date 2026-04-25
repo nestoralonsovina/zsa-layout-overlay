@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 set -euo pipefail
+setopt null_glob
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="Voyager Overlay"
@@ -17,6 +18,7 @@ EXECUTABLE_PATH="$ROOT_DIR/.build/debug/$EXECUTABLE_NAME"
 HIDAPI_SOURCE="/opt/homebrew/lib/libhidapi.0.dylib"
 HIDAPI_DEST="$FRAMEWORKS_DIR/libhidapi.0.dylib"
 HAR_SOURCE="${ZSA_LAYOUT_HAR:-$ROOT_DIR/typ.ing.har}"
+RESOURCE_BUNDLES=("$ROOT_DIR"/.build/debug/ZSALayoutOverlay_*.bundle)
 PLIST_PATH="$CONTENTS_DIR/Info.plist"
 FORCE_REBUILD="${ZSA_EXPORT_REBUILD:-0}"
 
@@ -50,6 +52,12 @@ if [[ -f "$HAR_SOURCE" ]]; then
 else
   echo "Warning: no typ.ing.har found at $HAR_SOURCE; app will look for /Users/Shared/typ.ing.har or ~/Downloads/typ.ing.har at runtime." >&2
 fi
+
+for bundle in "${RESOURCE_BUNDLES[@]}"; do
+  if [[ -d "$bundle" ]]; then
+    cp -R "$bundle" "$RESOURCES_DIR/"
+  fi
+done
 
 /usr/bin/install_name_tool \
   -change /opt/homebrew/opt/hidapi/lib/libhidapi.0.dylib \

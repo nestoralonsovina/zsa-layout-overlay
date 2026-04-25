@@ -19,7 +19,7 @@ struct OverlayRootView: View {
 
         return HStack(spacing: DesignTokens.Spacing.errorBannerHStack) {
             Text(activeError.message)
-                .font(.custom(DesignTokens.Font.header, size: DesignTokens.FontSize.errorMessage).weight(.medium))
+                .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.errorMessage))
                 .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.errorText))
                 .lineLimit(2)
 
@@ -112,10 +112,10 @@ struct OverlayRootView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.headerLeading) {
             Text("\(model.layout.name)")
-                .font(.custom(DesignTokens.Font.header, size: DesignTokens.FontSize.hudTitle).weight(.semibold))
+                .font(.custom(DesignTokens.Font.headerSemibold, size: DesignTokens.FontSize.hudTitle))
                 .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.headerPrimary))
             Text("Layer \(model.layout.activeLayerIndex) • \(String.safeText(model.layout.activeLayerName))")
-                .font(.custom(DesignTokens.Font.header, size: DesignTokens.FontSize.hudSubtitle).weight(.medium))
+                .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudSubtitle))
                 .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.headerSecondary))
         }
         .opacity(chromeVisible ? 1 : 0)
@@ -126,13 +126,13 @@ struct OverlayRootView: View {
     private var statusBadge: some View {
         VStack(alignment: .trailing, spacing: DesignTokens.Spacing.headerLeading) {
             Text(model.sourceName)
-                .font(.custom(DesignTokens.Font.header, size: DesignTokens.FontSize.hudCaption).weight(.semibold))
+                .font(.custom(DesignTokens.Font.headerSemibold, size: DesignTokens.FontSize.hudCaption))
                 .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.badgeLabel))
                 .padding(.horizontal, DesignTokens.Spacing.badgeHorizontal)
                 .padding(.vertical, DesignTokens.Spacing.badgeVertical)
                 .background(Capsule().fill(Color.white.opacity(DesignTokens.Opacity.badgeBackground)))
             Text(model.connectionState)
-                .font(.custom(DesignTokens.Font.header, size: DesignTokens.FontSize.hudCaption).weight(.medium))
+                .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudCaption))
                 .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.statusSecondary))
         }
         .opacity(chromeVisible ? 1 : 0)
@@ -142,7 +142,7 @@ struct OverlayRootView: View {
 
     private var footer: some View {
         Text(String.safeText(model.layout.statusText))
-            .font(.custom(DesignTokens.Font.header, size: DesignTokens.FontSize.hudCaption).weight(.medium))
+            .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudCaption))
             .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.footerLabel))
             .lineLimit(1)
             .opacity(chromeVisible ? 1 : 0)

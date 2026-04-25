@@ -4,8 +4,10 @@ import SwiftUI
 enum DesignTokens {
     // MARK: - Font Families
     enum Font {
-        static let header = "Inter"
-        static let mono = "JetBrains Mono"
+        static let headerMedium = AppFonts.interMedium
+        static let headerSemibold = AppFonts.interSemiBold
+        static let headerBold = AppFonts.interBold
+        static let monoMedium = AppFonts.jetBrainsMonoMedium
         static let system = "system"
     }
 

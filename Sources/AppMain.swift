@@ -3,6 +3,8 @@ import AppKit
 @main
 enum AppMain {
     static func main() {
+        AppFonts.registerBundledFonts()
+
         if CommandLine.arguments.contains("--check-har") {
             let harPath = CommandLine.arguments.dropFirst().first(where: { $0 != "--check-har" })
                 ?? "/Users/nestoralonsovina/Downloads/typ.ing.har"

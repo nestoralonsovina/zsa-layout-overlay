@@ -7,8 +7,8 @@ private enum LabelPosition {
 
 struct KeycapCard: View {
     let key: RenderedKey
-    private let keyFont = DesignTokens.Font.mono
-    private let sansFont = DesignTokens.Font.header
+    private let keyFont = DesignTokens.Font.monoMedium
+    private let sansBoldFont = DesignTokens.Font.headerBold
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -42,14 +42,14 @@ struct KeycapCard: View {
                     let fallback = String.safeText(emoji)
                     if !fallback.isEmpty {
                         Text(fallback)
-                            .font(.custom(sansFont, size: DesignTokens.FontSize.keyLabelXXS).weight(.bold))
+                            .font(.custom(sansBoldFont, size: DesignTokens.FontSize.keyLabelXXS))
                             .foregroundStyle(textColor.opacity(DesignTokens.Opacity.keycapEmoji))
                     }
                 }
 
                 if let icon = key.labels.icon, !icon.isEmpty {
                     Text(displayIcon(icon))
-                        .font(.custom(sansFont, size: DesignTokens.FontSize.keyGlyph).weight(.bold))
+                        .font(.custom(sansBoldFont, size: DesignTokens.FontSize.keyGlyph))
                         .foregroundStyle(textColor.opacity(DesignTokens.Opacity.keycapText))
                 }
 
@@ -98,35 +98,35 @@ struct KeycapCard: View {
         if let step {
             if let tag = step.tag, position == .top {
                 Text(String.safeText(tag))
-                    .font(.custom(keyFont, size: DesignTokens.FontSize.keyTag).weight(.medium))
+                    .font(.custom(keyFont, size: DesignTokens.FontSize.keyTag))
                     .foregroundStyle(textColor.opacity(DesignTokens.Opacity.keycapTag))
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
             }
 
             if let modifiers = step.modifiers, let glyph = step.glyph {
                 Text(String.safeText(modifiers))
-                    .font(.custom(keyFont, size: modifierFontSize(for: modifiers)).weight(.medium))
+                    .font(.custom(keyFont, size: modifierFontSize(for: modifiers)))
                     .foregroundStyle(textColor.opacity(DesignTokens.Opacity.keycapModifier))
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
                 Text(String.safeText(glyphDisplay(glyph, layer: step.layer)))
-                    .font(.custom(sansFont, size: DesignTokens.FontSize.keyGlyph).weight(.bold))
+                    .font(.custom(sansBoldFont, size: DesignTokens.FontSize.keyGlyph))
                     .foregroundStyle(textColor)
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
             } else if let glyph = step.glyph {
                 Text(String.safeText(glyphDisplay(glyph, layer: step.layer)))
-                    .font(.custom(sansFont, size: DesignTokens.FontSize.keyGlyph).weight(.bold))
+                    .font(.custom(sansBoldFont, size: DesignTokens.FontSize.keyGlyph))
                     .foregroundStyle(textColor)
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
             } else if let modifiers = step.modifiers, !step.label.isEmpty {
                 Text(String.safeText("\(modifiers)+\(step.label)"))
-                    .font(.custom(keyFont, size: modifierFontSize(for: modifiers)).weight(.medium))
+                    .font(.custom(keyFont, size: modifierFontSize(for: modifiers)))
                     .foregroundStyle(textColor)
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
                     .multilineTextAlignment(textAlignment(for: step, twoLabels: twoLabels) == .center ? .center : .leading)
                     .lineLimit(2)
             } else {
                 Text(String.safeText(step.label))
-                    .font(.custom(keyFont, size: fontSize(for: step.label, emphasize: shouldEmphasize(step, twoLabels: twoLabels))).weight(.medium))
+                    .font(.custom(keyFont, size: fontSize(for: step.label, emphasize: shouldEmphasize(step, twoLabels: twoLabels))))
                     .foregroundStyle(textColor)
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
                     .multilineTextAlignment(textAlignment(for: step, twoLabels: twoLabels) == .center ? .center : .leading)
@@ -135,7 +135,7 @@ struct KeycapCard: View {
 
             if let tag = step.tag, position == .bottom {
                 Text(String.safeText(tag))
-                    .font(.custom(keyFont, size: DesignTokens.FontSize.keyTag).weight(.medium))
+                    .font(.custom(keyFont, size: DesignTokens.FontSize.keyTag))
                     .foregroundStyle(textColor.opacity(DesignTokens.Opacity.keycapTag))
                     .frame(maxWidth: .infinity, alignment: textAlignment(for: step, twoLabels: twoLabels))
             }

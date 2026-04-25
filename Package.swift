@@ -26,6 +26,9 @@ let package = Package(
             name: "ZSALayoutOverlay",
             dependencies: ["ZSAHIDBridge"],
             path: "Sources",
+            resources: [
+                .process("Resources")
+            ],
             linkerSettings: [
                 .linkedFramework("IOKit")
             ]
@@ -39,6 +42,11 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags(["-L/opt/homebrew/lib", "-lhidapi"])
             ]
+        ),
+        .testTarget(
+            name: "ZSALayoutOverlayTests",
+            dependencies: ["ZSALayoutOverlay"],
+            path: "Tests"
         )
     ]
 )

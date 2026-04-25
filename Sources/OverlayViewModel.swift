@@ -60,6 +60,15 @@ final class OverlayViewModel {
         rerender()
     }
 
+    func reset() {
+        capture = nil
+        activeLayerIndex = 0
+        pressedKeyIndices.removeAll()
+        activeErrors.removeAll()
+        statusText = "Restarting..."
+        rerender()
+    }
+
     private func rerender() {
         guard let capture else {
             layout = OverlayLayouts.voyagerFallback(statusText: statusText)
