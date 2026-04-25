@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "checkpoints": [
+    {
+      "label": "pre-2_3-reorg",
+      "sha": "1c4a7886080de98b7b919e64ce71147308467dfc",
+      "timestamp": "2026-04-25T13:00:18.566Z"
+    }
+  ]
+}

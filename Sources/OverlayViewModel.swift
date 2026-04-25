@@ -11,6 +11,21 @@ final class OverlayViewModel {
     private var activeLayerIndex: Int = 0
     private var pressedKeyIndices: Set<Int> = []
     private var statusText: String = "Starting overlay"
+    var activeErrors: [ErrorState] = []
+
+    func reportError(_ state: ErrorState) {
+        if case .none = state {
+            activeErrors.removeAll()
+            return
+        }
+        activeErrors.removeAll { existing in
+            switch (existing, state) {
+            case (.warning, .warning), (.error, .error): return true
+            default: return false
+            }
+        }
+        activeErrors.append(state)
+    }
 
     func applyCapture(
         _ capture: OryxCapture,

@@ -7,16 +7,95 @@
     {
       "id": 1,
       "name": "Repository Setup",
-      "status": "complete",
+      "status": "pending",
       "tasks": [
         {
           "id": "1.1",
           "phase": 1,
-          "status": "completed",
+          "status": "pending",
           "size": "small",
           "description": "Add a proper .gitignore for Swift/SwiftUI macOS project with HID bridge, build artifacts, scraped website data, and macOS system files",
           "depends": [],
           "acceptance": "File .gitignore exists at repo root, covers .build/, .build-cache/, .dist/, .DS_Store, .tmp-saveweb/, saveweb2zip-com-typ-ing/, typ.ing.har, root-level scraped JS/CSS files, IDE files (.vscode/, .idea/, xcuserdata/), and .swarm/session/",
+          "files_touched": []
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "UI Architecture & Design Cleanup",
+      "status": "complete",
+      "tasks": [
+        {
+          "id": "2.1",
+          "phase": 2,
+          "status": "completed",
+          "size": "small",
+          "description": "Create Utilities/String+Safe.swift with a single deduplicated safeText() function handling control characters, private-use codepoints, and Unicode variation selectors without stripping legitimate symbols/brackets",
+          "depends": [
+            "2.3"
+          ],
+          "acceptance": "String+Safe.swift exists in Utilities/, contains one public safeText() function used by both OverlayRootView and KeycapCard, duplicate implementations removed, handles [ ] / {} / () brackets without corruption, strips only control chars (U+0000-U+001F, U+007F-U+009F) and FE0F variation selector",
+          "files_touched": []
+        },
+        {
+          "id": "2.2",
+          "phase": 2,
+          "status": "completed",
+          "size": "medium",
+          "description": "Extract KeycapCard (lines 163-369) and StripedFill (lines 376-392) from OverlayRootView.swift into Views/KeycapCard.swift and Views/StripedFill.swift",
+          "depends": [
+            "2.3"
+          ],
+          "acceptance": "KeycapCard.swift and StripedFill.swift exist in Views/, OverlayRootView.swift imports and uses them without code duplication, no rendering regression",
+          "files_touched": []
+        },
+        {
+          "id": "2.3",
+          "phase": 2,
+          "status": "completed",
+          "size": "medium",
+          "description": "Organize Sources/ into subdirectories — create DataSources/, Views/, Models/, Utilities/, Layouts/ directories and move files: DataSources (KeyboardDataSource, MockKeyboardDataSource, ZSAHIDDataSource, OryxHARDataSource, KeymappProbeDataSource), Views (OverlayRootView), Models (Models), Layouts (empty, for task 2.4). Root files stay: AppMain, AppDelegate, OverlayAppController, OverlayViewModel. Create git checkpoint before starting.",
+          "depends": [],
+          "acceptance": "All 11 source files in correct subdirectories, Package.swift paths updated to reflect new structure, swift build succeeds, all imports resolve correctly",
+          "files_touched": []
+        },
+        {
+          "id": "2.4",
+          "phase": 2,
+          "status": "completed",
+          "size": "medium",
+          "description": "Extract keySpecs array (lines 151-227) and layout constants (keyWidth, keyHeight, gap, rect helper) from Models.swift into Layouts/VoyagerLayout.swift with a VoyagerLayout enum containing static properties",
+          "depends": [
+            "2.3"
+          ],
+          "acceptance": "VoyagerLayout.swift exists in Layouts/ with keySpecs, keyWidth, keyHeight, gap constants, and rect function. Models.swift imports and uses VoyagerLayout.keySpecs. No layout values changed. swift build succeeds.",
+          "files_touched": []
+        },
+        {
+          "id": "2.5",
+          "phase": 2,
+          "status": "completed",
+          "size": "medium",
+          "description": "Add ErrorState enum (none, warning, error) and error callback to KeyboardDataSource protocol. Update OverlayViewModel to aggregate errors from all data sources and expose them to the UI. Update ZSAHIDDataSource to report hidapi errors through the callback.",
+          "depends": [
+            "2.3"
+          ],
+          "acceptance": "KeyboardDataSource protocol has onError callback. ZSAHIDDataSource reports bridge failures through it. OverlayViewModel collects errors and exposes activeErrors array. OverlayRootView renders error banner when errors present. Mock data source never triggers errors. swift build succeeds.",
+          "files_touched": []
+        },
+        {
+          "id": "2.6",
+          "phase": 2,
+          "status": "completed",
+          "size": "medium",
+          "description": "Visual design pass: extract design tokens (font sizes, spacings, radii, durations) into Layouts/DesignTokens.swift. Refine chrome fade animation timing. Ensure all keycap positions respect 6px gap consistently. Add OpacityModifier enum for consistent transparency values.",
+          "depends": [
+            "2.1",
+            "2.2",
+            "2.4"
+          ],
+          "acceptance": "DesignTokens.swift exists with fontSize, spacing, radius, animation duration constants. All views reference tokens instead of hardcoded values. Chrome fade uses smooth interruptible animation. Layer changes have visual transition feedback. swift build succeeds.",
           "files_touched": []
         }
       ]

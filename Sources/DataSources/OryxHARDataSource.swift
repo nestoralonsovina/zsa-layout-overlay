@@ -3,6 +3,7 @@ import SwiftUI
 
 @MainActor
 struct OryxHARDataSource: KeyboardDataSource {
+    var onError: ((ErrorState) -> Void)?
     let harPath: String
 
     func start(feeding model: OverlayViewModel) async {

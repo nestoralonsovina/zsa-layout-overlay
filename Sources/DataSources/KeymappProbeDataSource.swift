@@ -1,6 +1,8 @@
 import Foundation
 @MainActor
 struct KeymappProbeDataSource: KeyboardDataSource {
+    var onError: ((ErrorState) -> Void)?
+
     func start(feeding model: OverlayViewModel) async {
         let probe = KeymappSocketProbe()
         let result = await probe.probe()

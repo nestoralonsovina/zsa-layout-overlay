@@ -3,6 +3,7 @@ import ZSAHIDBridge
 
 @MainActor
 final class ZSAHIDDataSource: KeyboardDataSource {
+    var onError: ((ErrorState) -> Void)?
     private let voyagerMatrix: [[Int]] = [
         [-1, 0, 1, 2, 3, 4, 5],
         [-1, 6, 7, 8, 9, 10, 11],
@@ -33,6 +34,7 @@ final class ZSAHIDDataSource: KeyboardDataSource {
             let opened = zsa_hid_bridge_open_first_voyager()
             guard let opened else {
                 setStatus(connectionState: "bridge init failed", statusText: "Failed to initialize hidapi bridge.")
+                onError?(.error("Failed to initialize hidapi bridge"))
                 return
             }
             self.bridge = opened
@@ -45,6 +47,7 @@ final class ZSAHIDDataSource: KeyboardDataSource {
             }
             logInitialFeatureReports(from: opened)
             setStatus(connectionState: "voyager connected", statusText: "Voyager connected through hidapi. Listening for live reports.")
+            onError?(.none)
             await readLoop(using: opened)
             return
         }
@@ -63,6 +66,7 @@ final class ZSAHIDDataSource: KeyboardDataSource {
                 let message = lastError(from: bridge)
                 log("Read failed: \(message)")
                 setStatus(connectionState: "read failed", statusText: "hidapi read failed: \(message)")
+                onError?(.error("hidapi read failed: \(message)"))
                 break
             }
 

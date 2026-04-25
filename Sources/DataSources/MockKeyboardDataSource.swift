@@ -2,6 +2,8 @@ import Foundation
 
 @MainActor
 struct MockKeyboardDataSource: KeyboardDataSource {
+    var onError: ((ErrorState) -> Void)?
+
     func start(feeding model: OverlayViewModel) async {
         let frames: [(Int, Set<Int>)] = [
             (0, [7]),

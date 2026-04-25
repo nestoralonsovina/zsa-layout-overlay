@@ -4,9 +4,9 @@ import SwiftUI
 @MainActor
 final class OverlayAppController {
     private let model = OverlayViewModel()
-    private let keymappProbe = KeymappProbeDataSource()
-    private let captureDataSource: KeyboardDataSource?
-    private let liveDataSource: KeyboardDataSource
+    private var keymappProbe = KeymappProbeDataSource()
+    private var captureDataSource: KeyboardDataSource?
+    private var liveDataSource: KeyboardDataSource
     private var windowController: OverlayWindowController?
 
     init() {
@@ -40,6 +40,15 @@ final class OverlayAppController {
         windowController?.showWindow()
 
         Task {
+            keymappProbe.onError = { [weak model] state in
+                model?.reportError(state)
+            }
+            captureDataSource?.onError = { [weak model] state in
+                model?.reportError(state)
+            }
+            liveDataSource.onError = { [weak model] state in
+                model?.reportError(state)
+            }
             await keymappProbe.start(feeding: model)
             await captureDataSource?.start(feeding: model)
             await liveDataSource.start(feeding: model)
