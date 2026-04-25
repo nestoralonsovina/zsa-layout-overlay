@@ -1,0 +1,50 @@
+# ==== macOS System ====
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ==== SwiftPM & Build Artifacts ====
+.build/
+.build-cache/
+.dist/
+DerivedData/
+/build/
+
+# ==== Xcode ====
+*.xcuserdata
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+xcuserdata/
+
+# ==== IDE ====
+.vscode/
+.idea/
+
+# ==== Scraped Website Data ====
+.tmp-saveweb/
+saveweb2zip-com-typ-ing/
+0-l-jsiuliran.js
+0ah~yedwvyefh.js
+0qu344ywgytuw.css
+0r3-9o7rh_7s9.css
+typ.ing.har
+
+# ==== Swarm Session State ====
+.swarm/session/
+
+# ==== Swarm Operational Files ====
+.swarm/swarm.db
+.swarm/swarm.db-shm
+.swarm/swarm.db-wal
+.swarm/telemetry.jsonl
+.swarm/plan-ledger.jsonl
+.swarm/repo-graph.json
+.swarm/doc-manifest.json
+.swarm/curator-briefing.md
+.swarm/.plan-write-marker
+.swarm/review-receipts/
+.swarm/scopes/
+.swarm/locks/
+
+# ==== Root-Level Legacy Swarm Duplicates ====
+SWARM_PLAN.json
+SWARM_PLAN.md

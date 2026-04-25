@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "title": "ZSA Layout Overlay",
+  "swarm": "default",
+  "current_phase": 1,
+  "phases": [
+    {
+      "id": 1,
+      "name": "Repository Setup",
+      "status": "complete",
+      "tasks": [
+        {
+          "id": "1.1",
+          "phase": 1,
+          "status": "completed",
+          "size": "small",
+          "description": "Add a proper .gitignore for Swift/SwiftUI macOS project with HID bridge, build artifacts, scraped website data, and macOS system files",
+          "depends": [],
+          "acceptance": "File .gitignore exists at repo root, covers .build/, .build-cache/, .dist/, .DS_Store, .tmp-saveweb/, saveweb2zip-com-typ-ing/, typ.ing.har, root-level scraped JS/CSS files, IDE files (.vscode/, .idea/, xcuserdata/), and .swarm/session/",
+          "files_touched": []
+        }
+      ]
+    }
+  ],
+  "migration_status": "native",
+  "specMtime": "2026-04-25T12:23:34.034Z",
+  "specHash": "36c302a1b903ec755f1e96db5cfe93dd8a69ba9a1e585fb62917c8a0893b0434"
+}
