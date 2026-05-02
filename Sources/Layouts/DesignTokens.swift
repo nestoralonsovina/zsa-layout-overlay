@@ -41,8 +41,6 @@ enum DesignTokens {
         static let preferredHUDWidth: CGFloat = 920
         static let minHUDHeight: CGFloat = 290
         static let preferredHUDHeight: CGFloat = 330
-        static let maxKeyboardScale: CGFloat = 0.62
-        static let minKeyboardScale: CGFloat = 0.38
         static let keyboardHorizontalInset: CGFloat = 18
         static let keyboardVerticalInset: CGFloat = 14
         static let chromeReservedHeight: CGFloat = 74
