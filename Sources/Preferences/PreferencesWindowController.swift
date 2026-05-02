@@ -102,10 +102,21 @@ struct PreferencesView: View {
                 }
             }
 
-            Section("Layout") {
+            Section("Layout Source") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Enter your Oryx share URL or layout ID:")
+                        .font(.caption)
+                    TextField("https://configure.zsa.io/voyager/layouts/LmpYy/latest", text: Binding(
+                        get: { prefs.layoutURL ?? "" },
+                        set: { prefs.layoutURL = $0.isEmpty ? nil : $0 }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 11))
+                }
+
                 HStack {
-                    Text("HAR File")
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Or import HAR file (legacy)")
+                    Spacer()
                     if let path = prefs.harFilePath {
                         Text((path as NSString).lastPathComponent)
                             .lineLimit(1)
@@ -120,6 +131,11 @@ struct PreferencesView: View {
                     }
                     .controlSize(.small)
                 }
+
+                Text("Find your layout URL: open your layout on oryx.zsa.io, click the Share button, and copy the link.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack {

@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import UniformTypeIdentifiers
 
 @MainActor
 final class MenuBarController {
@@ -29,6 +30,13 @@ final class MenuBarController {
         )
         showHideItem.target = self
 
+        let importItem = NSMenuItem(
+            title: "Import Layout...",
+            action: #selector(_importLayout),
+            keyEquivalent: "i"
+        )
+        importItem.target = self
+
         let preferencesItem = NSMenuItem(
             title: "Preferences...",
             action: #selector(_showPreferences),
@@ -52,6 +60,7 @@ final class MenuBarController {
 
         let menu = NSMenu()
         menu.addItem(showHideItem)
+        menu.addItem(importItem)
         menu.addItem(preferencesItem)
         menu.addItem(restartItem)
         menu.addItem(.separator())
@@ -75,6 +84,27 @@ final class MenuBarController {
         appController.restart()
         isOverlayVisible = true
         showHideItem.title = "Hide Overlay"
+    }
+
+    // MARK: - Import Layout
+
+    @objc private func _importLayout() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.title = "Import Oryx Layout"
+        panel.message = "Select the .har file exported from Oryx"
+        if let harType = UTType(filenameExtension: "har") {
+            panel.allowedContentTypes = [harType]
+        } else {
+            panel.allowedContentTypes = [.init(filenameExtension: "har")!]
+        }
+
+        panel.begin { [weak self] result in
+            guard result == .OK, let url = panel.url else { return }
+            PreferencesStore.shared.harFilePath = url.path
+        }
     }
 
     @objc private func _toggleOverlay() {
@@ -106,7 +136,6 @@ final class MenuBarController {
     var menu: NSMenu { statusItem.menu! }
     var showHideItemTitle: String { showHideItem.title }
 
-    // Exposed for test invocation of private @objc methods
     func toggleOverlay() {
         _toggleOverlay()
     }
