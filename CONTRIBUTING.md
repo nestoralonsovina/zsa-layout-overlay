@@ -93,16 +93,6 @@ No other files need to change. The renderer, data sources, and window management
 - No force-unwrapping without a comment explaining why it's safe
 - Keep methods small; extract domain logic into pure functions
 
-## Testing
-
-Run the test suite before opening a PR:
-
-```bash
-swift test
-```
-
-If your change affects the menu bar or window lifecycle, add a test in the appropriate `Tests/` file.
-
 ## Questions?
 
 Open an issue with the `question` label.

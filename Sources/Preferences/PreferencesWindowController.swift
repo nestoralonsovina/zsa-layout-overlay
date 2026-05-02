@@ -114,25 +114,7 @@ struct PreferencesView: View {
                     .font(.system(size: 11))
                 }
 
-                HStack {
-                    Text("Or import HAR file (legacy)")
-                    Spacer()
-                    if let path = prefs.harFilePath {
-                        Text((path as NSString).lastPathComponent)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Not set")
-                            .foregroundStyle(.secondary)
-                    }
-                    Button("Choose...") {
-                        chooseHARFile()
-                    }
-                    .controlSize(.small)
-                }
-
-                Text("Find your layout URL: open your layout on oryx.zsa.io, click the Share button, and copy the link.")
+                Text("Open your layout on oryx.zsa.io, click Share, and copy the link.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -149,19 +131,5 @@ struct PreferencesView: View {
         .formStyle(.grouped)
         .padding()
         .frame(minWidth: 400, minHeight: 360)
-    }
-
-    private func chooseHARFile() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.init(filenameExtension: "har")!]
-
-        panel.begin { result in
-            if result == .OK, let url = panel.url {
-                PreferencesStore.shared.harFilePath = url.path
-            }
-        }
     }
 }

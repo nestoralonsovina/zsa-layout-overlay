@@ -55,16 +55,6 @@ final class PreferencesStore: ObservableObject {
 
     // MARK: - HAR Path
 
-    @Published var harFilePath: String? {
-        didSet {
-            if let path = harFilePath {
-                defaults.set(path, forKey: Keys.harFilePath)
-            } else {
-                defaults.removeObject(forKey: Keys.harFilePath)
-            }
-        }
-    }
-
     // MARK: - Init
 
     private init() {
@@ -75,7 +65,6 @@ final class PreferencesStore: ObservableObject {
         self.keycapOpacity = defaults.object(forKey: Keys.keycapOpacity) as? Double ?? 1.0
         self.chromeFadeDelay = defaults.object(forKey: Keys.chromeFadeDelay) as? Double ?? 2.4
         self.scaleMultiplier = defaults.object(forKey: Keys.scaleMultiplier) as? Double ?? 1.0
-        self.harFilePath = defaults.string(forKey: Keys.harFilePath)
         self.layoutURL = defaults.string(forKey: Keys.layoutURL)
     }
 
@@ -87,7 +76,6 @@ final class PreferencesStore: ObservableObject {
         keycapOpacity = 1.0
         chromeFadeDelay = 2.4
         scaleMultiplier = 1.0
-        harFilePath = nil
         layoutURL = nil
     }
 
@@ -101,7 +89,6 @@ final class PreferencesStore: ObservableObject {
         static let keycapOpacity = "keycapOpacity"
         static let chromeFadeDelay = "chromeFadeDelay"
         static let scaleMultiplier = "scaleMultiplier"
-        static let harFilePath = "harFilePath"
         static let layoutURL = "layoutURL"
     }
 }
