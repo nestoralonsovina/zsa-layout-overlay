@@ -9,6 +9,7 @@ private struct OverlayMetrics {
 struct OverlayRootView: View {
     let model: OverlayViewModel
     @State private var overlayVisible = true
+    @State private var hasEverReceivedInput = false
     @StateObject private var prefs = PreferencesStore.shared
 
     var body: some View {
@@ -69,11 +70,15 @@ struct OverlayRootView: View {
     }
 
     private func refreshOverlayVisibility() async {
-        withAnimation(.easeOut(duration: DesignTokens.Animation.chromeShow)) {
-            overlayVisible = true
+        if pressedKeyCount > 0 {
+            withAnimation(.easeOut(duration: DesignTokens.Animation.chromeShow)) {
+                overlayVisible = true
+                hasEverReceivedInput = true
+            }
+            return
         }
 
-        if pressedKeyCount > 0 {
+        if !hasEverReceivedInput {
             return
         }
 
