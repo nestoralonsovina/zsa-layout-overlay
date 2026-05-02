@@ -5,7 +5,7 @@ import XCTest
 final class OverlayViewModelResetTests: XCTestCase {
 
     func test_resetClearsActiveErrors() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         model.reportError(.warning("Test warning"))
         XCTAssertEqual(model.activeErrors.count, 1)
 
@@ -15,7 +15,7 @@ final class OverlayViewModelResetTests: XCTestCase {
     }
 
     func test_resetProducesFallbackLayout() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         model.reset()
 
         XCTAssertEqual(model.layout.activeLayerName, "Fallback")
@@ -24,14 +24,14 @@ final class OverlayViewModelResetTests: XCTestCase {
     }
 
     func test_resetSetsStatusTextToRestarting() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         model.reset()
 
         XCTAssertEqual(model.layout.statusText, "Restarting...")
     }
 
     func test_resetYieldsAllKeysUnpressed() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         model.reset()
 
         let pressedKeys = model.layout.keys.filter { $0.isPressed }
@@ -39,7 +39,7 @@ final class OverlayViewModelResetTests: XCTestCase {
     }
 
     func test_resetYieldsTransparentKeys() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         model.reset()
 
         let nonTransparentKeys = model.layout.keys.filter { $0.styleClass != .transparent }
@@ -47,7 +47,7 @@ final class OverlayViewModelResetTests: XCTestCase {
     }
 
     func test_resetIsIdempotent() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         model.reset()
         let firstLayout = model.layout
 
@@ -60,7 +60,7 @@ final class OverlayViewModelResetTests: XCTestCase {
     }
 
     func test_resetClearsStateAfterApplyCapture() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         model.reportError(.error("Test error"))
         model.reportError(.warning("Another warning"))
         XCTAssertEqual(model.activeErrors.count, 2)
@@ -77,7 +77,7 @@ final class OverlayViewModelResetTests: XCTestCase {
 final class OverlayWindowControllerTests: XCTestCase {
 
     func test_hideWindowMethodExists() {
-        let model = OverlayViewModel()
+        let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
         let controller = OverlayWindowController(model: model)
 
         XCTAssertNotNil(controller)
@@ -89,7 +89,7 @@ final class OverlayWindowControllerTests: XCTestCase {
 final class OverlayAppControllerLifecycleTests: XCTestCase {
 
     func test_restartMethodExistsAndCompiles() {
-        let controller = OverlayAppController()
+        let controller = OverlayAppController(keyboard: KeyboardRegistry.default)
 
         XCTAssertNotNil(controller)
         controller.restart()

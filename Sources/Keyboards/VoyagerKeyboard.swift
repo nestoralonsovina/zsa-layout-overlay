@@ -1,26 +1,29 @@
 import CoreGraphics
 
-enum VoyagerLayout {
-    static let keyWidth: CGFloat = 66
-    static let keyHeight: CGFloat = 66
-    static let gap: CGFloat = 6
-    static let thumbTopY: CGFloat = 248
-    static let leftThumbX: CGFloat = 518
-    static let rightThumbX: CGFloat = 836
+struct VoyagerKeyboard: KeyboardDefinition {
+    var geometry: KeyboardGeometry { VoyagerGeometry() }
+    var hidProfile: HIDDeviceProfile? { VoyagerHIDProfile.profile }
+}
 
-    static var voyagerPhysicalKeyCount: Int { keySpecs.count }
+private struct VoyagerGeometry: KeyboardGeometry {
+    let name = "Voyager"
 
-    static func rect(_ x: CGFloat, _ y: CGFloat, w: CGFloat = keyWidth, h: CGFloat = keyHeight) -> CGRect {
+    private static let keyWidth: CGFloat = 66
+    private static let keyHeight: CGFloat = 66
+    private static let gap: CGFloat = 6
+    private static let thumbTopY: CGFloat = 248
+    private static let leftThumbX: CGFloat = 518
+    private static let rightThumbX: CGFloat = 836
+
+    private static func rect(_ x: CGFloat, _ y: CGFloat, w: CGFloat = keyWidth, h: CGFloat = keyHeight) -> CGRect {
         CGRect(x: x, y: y, width: w, height: h)
     }
 
-    struct KeySpec {
-        let id: String
-        let frame: CGRect
-        let rotation: Double
+    var keySpecs: [KeySpec] {
+        Self.specs
     }
 
-    static let keySpecs: [KeySpec] = [
+    private static let specs: [KeySpec] = [
         KeySpec(id: "L00", frame: rect(26, 32), rotation: 0),
         KeySpec(id: "L01", frame: rect(26 + 1 * (keyWidth + gap), 32), rotation: 0),
         KeySpec(id: "L02", frame: rect(26 + 2 * (keyWidth + gap), 32), rotation: 0),
@@ -83,4 +86,27 @@ enum VoyagerLayout {
         KeySpec(id: "RT0", frame: rect(rightThumbX, thumbTopY + keyHeight + gap), rotation: 0),
         KeySpec(id: "RT1", frame: rect(rightThumbX, thumbTopY), rotation: 0)
     ]
+}
+
+private enum VoyagerHIDProfile {
+    static let profile = HIDDeviceProfile(
+        vendorID: 12951,
+        productID: 6519,
+        usagePage: 65376,
+        usage: 97,
+        keyMatrix: [
+            [-1, 0, 1, 2, 3, 4, 5],
+            [-1, 6, 7, 8, 9, 10, 11],
+            [-1, 12, 13, 14, 15, 16, 17],
+            [-1, 18, 19, 20, 21, 22],
+            [-1, -1, -1, -1, 23],
+            [24, 25],
+            [26, 27, 28, 29, 30, 31],
+            [32, 33, 34, 35, 36, 37],
+            [38, 39, 40, 41, 42, 43],
+            [-1, 45, 46, 47, 48, 49],
+            [-1, -1, 44, -1, -1, -1, -1],
+            [-1, -1, -1, -1, -1, 50, 51]
+        ]
+    )
 }

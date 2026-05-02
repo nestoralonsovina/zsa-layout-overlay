@@ -4,7 +4,7 @@ import Observation
 @MainActor
 @Observable
 final class OverlayViewModel {
-    var layout: RenderedKeyboardLayout = OverlayLayouts.voyagerFallback(statusText: "Starting overlay")
+    var layout: RenderedKeyboardLayout
     var sourceName: String = "boot"
     var connectionState: String = "initializing"
     private var capture: OryxCapture?
@@ -12,6 +12,14 @@ final class OverlayViewModel {
     private var pressedKeyIndices: Set<Int> = []
     private var statusText: String = "Starting overlay"
     var activeErrors: [ErrorState] = []
+    private let keyboard: KeyboardDefinition
+
+    init(keyboard: KeyboardDefinition) {
+        self.keyboard = keyboard
+        let initialStatus = "Starting overlay"
+        self.statusText = initialStatus
+        self.layout = KeyboardLayoutRenderer.fallback(definition: keyboard, statusText: initialStatus)
+    }
 
     func reportError(_ state: ErrorState) {
         if case .none = state {
@@ -71,11 +79,12 @@ final class OverlayViewModel {
 
     private func rerender() {
         guard let capture else {
-            layout = OverlayLayouts.voyagerFallback(statusText: statusText)
+            layout = KeyboardLayoutRenderer.fallback(definition: keyboard, statusText: statusText)
             return
         }
 
-        layout = OverlayLayouts.voyager(
+        layout = KeyboardLayoutRenderer.render(
+            definition: keyboard,
             capture: capture,
             activeLayerIndex: activeLayerIndex,
             pressedKeyIndices: pressedKeyIndices,

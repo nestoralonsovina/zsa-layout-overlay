@@ -4,20 +4,7 @@ import ZSAHIDBridge
 final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
     var onError: ((ErrorState) -> Void)?
     private let eventLoggingEnabled = false
-    private let voyagerMatrix: [[Int]] = [
-        [-1, 0, 1, 2, 3, 4, 5],
-        [-1, 6, 7, 8, 9, 10, 11],
-        [-1, 12, 13, 14, 15, 16, 17],
-        [-1, 18, 19, 20, 21, 22],
-        [-1, -1, -1, -1, 23],
-        [24, 25],
-        [26, 27, 28, 29, 30, 31],
-        [32, 33, 34, 35, 36, 37],
-        [38, 39, 40, 41, 42, 43],
-        [-1, 45, 46, 47, 48, 49],
-        [-1, -1, 44, -1, -1, -1, -1],
-        [-1, -1, -1, -1, -1, 50, 51]
-    ]
+    private let hidProfile: HIDDeviceProfile?
 
     private weak var model: OverlayViewModel?
     private typealias BridgeRef = UnsafeMutableRawPointer
@@ -25,11 +12,20 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
     private var activeLayerIndex = 0
     private var pressedKeyIndices: Set<Int> = []
 
+    init(hidProfile: HIDDeviceProfile?) {
+        self.hidProfile = hidProfile
+    }
+
     @MainActor
     func start(feeding model: OverlayViewModel) async {
         self.model = model
         log("Starting hidapi live bridge")
-        await setStatus(connectionState: "waiting for voyager", statusText: "Waiting for a ZSA Voyager hidapi connection.")
+        guard hidProfile != nil else {
+            await setStatus(connectionState: "no hid profile", statusText: "No HID profile configured for this keyboard.")
+            await reportError(.warning("No HID profile configured"))
+            return
+        }
+        await setStatus(connectionState: "waiting for device", statusText: "Waiting for a ZSA device hidapi connection.")
 
         guard let bridge else {
             let opened = zsa_hid_bridge_open_first_voyager()
@@ -39,7 +35,7 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
                 return
             }
             self.bridge = opened
-            log("Opened Voyager hidapi bridge")
+            log("Opened hidapi bridge")
             if zsa_hid_bridge_write_command(opened, 0) < 0 {
                 log("Handshake [0] failed: \(lastError(from: opened))")
             }
@@ -47,7 +43,7 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
                 log("Handshake [1] failed: \(lastError(from: opened))")
             }
             logInitialFeatureReports(from: opened)
-            await setStatus(connectionState: "voyager connected", statusText: "Voyager connected through hidapi. Listening for live reports.")
+            await setStatus(connectionState: "device connected", statusText: "Device connected through hidapi. Listening for live reports.")
             await reportError(.none)
             await runReadLoop(using: opened)
             return
@@ -105,7 +101,7 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
         case 0:
             if let descriptor = String(bytes: bytes, encoding: .utf8) {
                 log("Descriptor -> \(descriptor)")
-                await setStatus(connectionState: "streaming live state", statusText: "Voyager connected. Layout descriptor \(descriptor).")
+                await setStatus(connectionState: "streaming live state", statusText: "Device connected. Layout descriptor \(descriptor).")
             }
         case 5:
             guard let layer = bytes.first else { return }
@@ -154,17 +150,18 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
     }
 
     private func matrixIndex(row: Int, column: Int) -> Int? {
-        guard row >= 0, row < voyagerMatrix.count else { return nil }
-        guard column >= 0, column < voyagerMatrix[row].count else { return nil }
-        let index = voyagerMatrix[row][column]
-        guard index >= 0, index < OverlayLayouts.voyagerPhysicalKeyCount else { return nil }
+        guard let profile = hidProfile else { return nil }
+        guard row >= 0, row < profile.keyMatrix.count else { return nil }
+        guard column >= 0, column < profile.keyMatrix[row].count else { return nil }
+        let index = profile.keyMatrix[row][column]
+        guard index >= 0, index < profile.physicalKeyCount else { return nil }
         return index
     }
 
     private func pushLiveState() async {
         let activeLayerIndex = activeLayerIndex
         let pressedKeyIndices = pressedKeyIndices
-        let statusText = "Voyager connected. Layer \(activeLayerIndex) with \(pressedKeyIndices.count) pressed key(s)."
+        let statusText = "Device connected. Layer \(activeLayerIndex) with \(pressedKeyIndices.count) pressed key(s)."
 
         await MainActor.run {
             model?.applyLiveState(
@@ -198,7 +195,8 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
                 zsa_hid_bridge_get_feature_report(bridge, reportID, pointer.baseAddress, Int32(pointer.count))
             }
             guard count > 0 else { continue }
-            log("Feature[\(reportID)] -> \(hexDump(Array(buffer.prefix(Int(count)))))")
+            log("Feature[\(reportID)] -> \(hexDump(Array(buffer.prefix(Int(count)))))"
+            )
         }
     }
 

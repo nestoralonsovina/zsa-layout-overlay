@@ -5,9 +5,7 @@ enum AppMain {
     static func main() {
         AppFonts.registerBundledFonts()
 
-        if CommandLine.arguments.contains("--check-har") {
-            let harPath = CommandLine.arguments.dropFirst().first(where: { $0 != "--check-har" })
-                ?? "/Users/nestoralonsovina/Downloads/typ.ing.har"
+        if CommandLine.arguments.contains("--check-har"), let harPath = CommandLine.arguments.last, harPath != "--check-har" {
             do {
                 let capture = try OryxHARLoader.load(from: harPath)
                 print("Loaded layout \(capture.layoutID) revision \(capture.revisionID) geometry \(capture.geometry)")
@@ -17,7 +15,7 @@ enum AppMain {
                 }
                 exit(0)
             } catch {
-                fputs("HAR parse failed: \(OryxHARDataSource(harPath: harPath).debugDescription(for: error))\n", stderr)
+                fputs("HAR parse failed: \(OryxHARDataSource.debugDescription(for: error))\n", stderr)
                 exit(1)
             }
         }

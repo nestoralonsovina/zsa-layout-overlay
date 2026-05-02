@@ -3,17 +3,18 @@ import SwiftUI
 
 @MainActor
 final class OverlayAppController {
-    private let model = OverlayViewModel()
+    private let model: OverlayViewModel
     private var keymappProbe = KeymappProbeDataSource()
     private var captureDataSource: KeyboardDataSource?
     private var liveDataSource: KeyboardDataSource
     private var windowController: OverlayWindowController?
     private var activeTask: Task<Void, Never>?
 
-    init() {
+    init(keyboard: KeyboardDefinition = KeyboardRegistry.default) {
+        self.model = OverlayViewModel(keyboard: keyboard)
         if let harPath = Self.resolvedHARPath() {
             captureDataSource = OryxHARDataSource(harPath: harPath)
-            liveDataSource = ZSAHIDDataSource()
+            liveDataSource = ZSAHIDDataSource(hidProfile: keyboard.hidProfile)
         } else {
             captureDataSource = nil
             liveDataSource = MockKeyboardDataSource()
@@ -24,9 +25,8 @@ final class OverlayAppController {
         let environmentHARPath = ProcessInfo.processInfo.environment["ZSA_LAYOUT_HAR"]
         let bundleHARPath = Bundle.main.path(forResource: "typ.ing", ofType: "har")
         let sharedHARPath = "/Users/Shared/typ.ing.har"
-        let userDownloadsHARPath = NSHomeDirectory() + "/Downloads/typ.ing.har"
 
-        for candidate in [environmentHARPath, bundleHARPath, sharedHARPath, userDownloadsHARPath] {
+        for candidate in [environmentHARPath, bundleHARPath, sharedHARPath] {
             guard let candidate else { continue }
             if FileManager.default.fileExists(atPath: candidate) {
                 return candidate
@@ -71,10 +71,9 @@ final class OverlayAppController {
         windowController = nil
         model.reset()
 
-        keymappProbe = KeymappProbeDataSource()
         if let harPath = Self.resolvedHARPath() {
             captureDataSource = OryxHARDataSource(harPath: harPath)
-            liveDataSource = ZSAHIDDataSource()
+            liveDataSource = ZSAHIDDataSource(hidProfile: KeyboardRegistry.default.hidProfile)
         } else {
             captureDataSource = nil
             liveDataSource = MockKeyboardDataSource()

@@ -20,16 +20,16 @@ struct OryxHARDataSource: KeyboardDataSource {
                 statusText: "Loaded \(capture.layers.count) layers from HAR for layout \(capture.layoutID) revision \(capture.revisionID)."
             )
         } catch {
-            fputs("OryxHARDataSource error: \(debugDescription(for: error))\n", stderr)
+            fputs("OryxHARDataSource error: \(Self.debugDescription(for: error))\n", stderr)
             model.applyStatus(
                 sourceName: "oryx-har",
                 connectionState: "capture parse failed",
-                statusText: "Failed to parse HAR: \(debugDescription(for: error))"
+                statusText: "Failed to parse HAR: \(Self.debugDescription(for: error))"
             )
         }
     }
 
-    func debugDescription(for error: Error) -> String {
+    static func debugDescription(for error: Error) -> String {
         if let loaderError = error as? OryxHARLoader.LoaderError {
             return loaderError.localizedDescription
         }
@@ -49,39 +49,6 @@ struct OryxHARDataSource: KeyboardDataSource {
         }
         return error.localizedDescription
     }
-}
-
-struct OryxCapture {
-    let layoutID: String
-    let revisionID: String
-    let geometry: String
-    let layers: [ParsedLayer]
-}
-
-struct ParsedLayer: Hashable {
-    let index: Int
-    let title: String
-    let keys: [ParsedKey]
-}
-
-struct ParsedKey: Hashable {
-    let top: RenderedLabelStep?
-    let bottom: RenderedLabelStep?
-    let icon: String?
-    let emoji: String?
-    let styleClass: KeyVisualClass
-    let glowColor: Color?
-    let colorDot: Color?
-
-    static let empty = ParsedKey(
-        top: .init(label: "⊘", tag: nil, glyph: nil, layer: nil, modifiers: nil),
-        bottom: nil,
-        icon: nil,
-        emoji: nil,
-        styleClass: .transparent,
-        glowColor: nil,
-        colorDot: nil
-    )
 }
 
 enum OryxHARLoader {

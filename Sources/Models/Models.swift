@@ -82,74 +82,35 @@ enum KeyVisualClass: String, Hashable {
     }
 }
 
-enum OverlayLayouts {
-    static let voyagerPhysicalKeyCount = VoyagerLayout.voyagerPhysicalKeyCount
+struct OryxCapture {
+    let layoutID: String
+    let revisionID: String
+    let geometry: String
+    let layers: [ParsedLayer]
+}
 
-    static func voyager(
-        capture: OryxCapture,
-        activeLayerIndex: Int,
-        pressedKeyIndices: Set<Int>,
-        statusText: String
-    ) -> RenderedKeyboardLayout {
-        let layer = resolvedLayer(in: capture, activeLayerIndex: activeLayerIndex)
+struct ParsedLayer: Hashable {
+    let index: Int
+    let title: String
+    let keys: [ParsedKey]
+}
 
-        return RenderedKeyboardLayout(
-            name: "Voyager",
-            activeLayerName: layer.title,
-            activeLayerIndex: layer.index,
-            statusText: statusText,
-            keys: VoyagerLayout.keySpecs.enumerated().map { index, spec in
-                let content = index < layer.keys.count ? layer.keys[index] : .empty
-                return RenderedKey(
-                    id: spec.id,
-                    frame: spec.frame,
-                    rotation: spec.rotation,
-                    styleClass: content.styleClass,
-                    labels: .init(
-                        top: content.top,
-                        bottom: content.bottom,
-                        icon: content.icon,
-                        emoji: content.emoji
-                    ),
-                    isPressed: pressedKeyIndices.contains(index),
-                    glowColor: content.glowColor,
-                    colorDot: content.colorDot
-                )
-            }
-        )
-    }
+struct ParsedKey: Hashable {
+    let top: RenderedLabelStep?
+    let bottom: RenderedLabelStep?
+    let icon: String?
+    let emoji: String?
+    let styleClass: KeyVisualClass
+    let glowColor: Color?
+    let colorDot: Color?
 
-    static func voyagerFallback(statusText: String) -> RenderedKeyboardLayout {
-        RenderedKeyboardLayout(
-            name: "Voyager",
-            activeLayerName: "Fallback",
-            activeLayerIndex: 0,
-            statusText: statusText,
-            keys: VoyagerLayout.keySpecs.map { spec in
-                RenderedKey(
-                    id: spec.id,
-                    frame: spec.frame,
-                    rotation: spec.rotation,
-                    styleClass: .transparent,
-                    labels: .init(
-                        top: ParsedKey.empty.top,
-                        bottom: ParsedKey.empty.bottom,
-                        icon: ParsedKey.empty.icon,
-                        emoji: ParsedKey.empty.emoji
-                    ),
-                    isPressed: false,
-                    glowColor: nil,
-                    colorDot: nil
-                )
-            }
-        )
-    }
-
-    private static func resolvedLayer(in capture: OryxCapture, activeLayerIndex: Int) -> ParsedLayer {
-        if let exact = capture.layers.first(where: { $0.index == activeLayerIndex }) {
-            return exact
-        }
-        let fallbackIndex = min(max(activeLayerIndex, 0), max(capture.layers.count - 1, 0))
-        return capture.layers[fallbackIndex]
-    }
+    static let empty = ParsedKey(
+        top: .init(label: "\u{2298}", tag: nil, glyph: nil, layer: nil, modifiers: nil),
+        bottom: nil,
+        icon: nil,
+        emoji: nil,
+        styleClass: .transparent,
+        glowColor: nil,
+        colorDot: nil
+    )
 }
