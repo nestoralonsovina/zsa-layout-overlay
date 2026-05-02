@@ -1,14 +1,14 @@
 import AppKit
-import Combine
 
 @MainActor
 final class MenuBarController {
     private let appController: OverlayAppController
     private let statusItem: NSStatusItem
     private let showHideItem: NSMenuItem
-    private var isOverlayVisible: Bool = true
+    private var isOverlayVisible = true
     private let preferencesController = PreferencesWindowController()
-    private var cancellables = Set<AnyCancellable>()
+    private var visualApplyWorkItem: DispatchWorkItem?
+    private var layoutReloadWorkItem: DispatchWorkItem?
 
     init(appController: OverlayAppController) {
         self.appController = appController
@@ -59,16 +59,29 @@ final class MenuBarController {
 
         statusItem.menu = menu
 
-        observePreferences()
+        setupPreferencesObserver()
     }
 
-    private func observePreferences() {
-        PreferencesStore.shared.objectWillChange
-            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.performRestart()
+    private func setupPreferencesObserver() {
+        PreferencesStore.shared.onVisualChange = { [weak self] in
+            guard let self else { return }
+            visualApplyWorkItem?.cancel()
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.appController.applyVisualPreferences()
             }
-            .store(in: &cancellables)
+            visualApplyWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: workItem)
+        }
+
+        PreferencesStore.shared.onLayoutChange = { [weak self] in
+            guard let self else { return }
+            layoutReloadWorkItem?.cancel()
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.appController.reloadCaptureSource()
+            }
+            layoutReloadWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+        }
     }
 
     private func performRestart() {

@@ -10,7 +10,7 @@ struct OverlayRootView: View {
     let model: OverlayViewModel
     @State private var overlayVisible = true
     @State private var hasEverReceivedInput = false
-    @StateObject private var prefs = PreferencesStore.shared
+    @State private var prefs = PreferencesStore.shared
 
     var body: some View {
         GeometryReader { proxy in

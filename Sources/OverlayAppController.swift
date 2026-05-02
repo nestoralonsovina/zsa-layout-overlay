@@ -8,7 +8,9 @@ final class OverlayAppController {
     private var captureDataSource: KeyboardDataSource?
     private var liveDataSource: KeyboardDataSource
     private var windowController: OverlayWindowController?
-    private var activeTask: Task<Void, Never>?
+    private var captureTask: Task<Void, Never>?
+    private var liveTask: Task<Void, Never>?
+    private var keymappTask: Task<Void, Never>?
     private var lastMainScreen: NSScreen?
 
     init(keyboard: KeyboardDefinition = KeyboardRegistry.default) {
@@ -75,20 +77,70 @@ final class OverlayAppController {
 
         observeScreenChanges()
 
-        activeTask = Task {
-            keymappProbe.onError = { [weak model] state in
-                model?.reportError(state)
-            }
-            captureDataSource?.onError = { [weak model] state in
-                model?.reportError(state)
-            }
-            liveDataSource.onError = { [weak model] state in
-                model?.reportError(state)
-            }
+        startKeymappProbe()
+        startCaptureSource()
+        startLiveSource()
+    }
+
+    // MARK: - Layout Reload (no restart)
+
+    func reloadCaptureSource() {
+        captureTask?.cancel()
+        captureTask = nil
+
+        let newSource = Self.resolveCaptureSource()
+        captureDataSource = newSource
+
+        guard let source = newSource else { return }
+
+        captureDataSource?.onError = { [weak model] state in
+            model?.reportError(state)
+        }
+
+        let model = self.model
+        captureTask = Task {
+            await source.start(feeding: model)
+        }
+    }
+
+    // MARK: - Data Source Tasks
+
+    private func startKeymappProbe() {
+        keymappProbe.onError = { [weak model] state in
+            model?.reportError(state)
+        }
+        let model = self.model
+        keymappTask = Task {
             await keymappProbe.start(feeding: model)
-            await captureDataSource?.start(feeding: model)
+        }
+    }
+
+    private func startCaptureSource() {
+        captureDataSource?.onError = { [weak model] state in
+            model?.reportError(state)
+        }
+        let model = self.model
+        let source = captureDataSource
+        captureTask = Task {
+            await source?.start(feeding: model)
+        }
+    }
+
+    private func startLiveSource() {
+        liveDataSource.onError = { [weak model] state in
+            model?.reportError(state)
+        }
+        let model = self.model
+        liveTask = Task {
             await liveDataSource.start(feeding: model)
         }
+    }
+
+    // MARK: - Live Preference Application
+
+    func applyVisualPreferences() {
+        let targetScreen = currentTargetScreen()
+        windowController?.applyVisualPreferences(on: targetScreen)
     }
 
     // MARK: - Screen Following
@@ -137,8 +189,13 @@ final class OverlayAppController {
     }
 
     func restart() {
-        activeTask?.cancel()
-        activeTask = nil
+        captureTask?.cancel()
+        liveTask?.cancel()
+        keymappTask?.cancel()
+        captureTask = nil
+        liveTask = nil
+        keymappTask = nil
+
         windowController?.hideWindow()
         windowController = nil
         lastMainScreen = nil
@@ -189,6 +246,32 @@ final class OverlayWindowController {
         window.orderFrontRegardless()
 
         self.window = window
+    }
+
+    func applyVisualPreferences(on screen: NSScreen) {
+        let prefs = PreferencesStore.shared
+        let screenFrame = screen.visibleFrame
+
+        let contentSize = NSSize(
+            width: min(
+                DesignTokens.Layout.preferredHUDWidth * prefs.scaleMultiplier,
+                max(DesignTokens.Layout.minHUDWidth * prefs.scaleMultiplier, screenFrame.width - 72)
+            ),
+            height: min(
+                DesignTokens.Layout.preferredHUDHeight * prefs.scaleMultiplier,
+                max(DesignTokens.Layout.minHUDHeight * prefs.scaleMultiplier, screenFrame.height * 0.36)
+            )
+        )
+
+        let origin = Self.originFor(
+            screenFrame: screenFrame,
+            contentSize: contentSize,
+            positionX: prefs.positionX,
+            positionY: prefs.positionY
+        )
+
+        window.setContentSize(contentSize)
+        window.setFrameOrigin(origin)
     }
 
     func reposition(on screen: NSScreen) {

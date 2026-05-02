@@ -1,59 +1,83 @@
 import Foundation
-import SwiftUI
 
+@Observable
 @MainActor
-final class PreferencesStore: ObservableObject {
+final class PreferencesStore {
     static let shared = PreferencesStore()
 
     private let defaults = UserDefaults.standard
 
+    var onVisualChange: (() -> Void)?
+    var onLayoutChange: (() -> Void)?
+
+    private func notifyVisual() { onVisualChange?() }
+    private func notifyLayout() { onLayoutChange?() }
+
     // MARK: - Window Position
 
-    @Published var positionX: Double {
-        didSet { defaults.set(positionX, forKey: Keys.positionX) }
+    var positionX: Double {
+        didSet {
+            defaults.set(positionX, forKey: Keys.positionX)
+            notifyVisual()
+        }
     }
 
-    @Published var positionY: Double {
-        didSet { defaults.set(positionY, forKey: Keys.positionY) }
+    var positionY: Double {
+        didSet {
+            defaults.set(positionY, forKey: Keys.positionY)
+            notifyVisual()
+        }
     }
 
-    /// When true, overlay follows whichever screen has the active app
-    @Published var followFocusedScreen: Bool {
-        didSet { defaults.set(followFocusedScreen, forKey: Keys.followFocusedScreen) }
+    var followFocusedScreen: Bool {
+        didSet {
+            defaults.set(followFocusedScreen, forKey: Keys.followFocusedScreen)
+            notifyVisual()
+        }
     }
 
     // MARK: - Appearance
 
-    @Published var overlayOpacity: Double {
-        didSet { defaults.set(overlayOpacity, forKey: Keys.overlayOpacity) }
+    var overlayOpacity: Double {
+        didSet {
+            defaults.set(overlayOpacity, forKey: Keys.overlayOpacity)
+            notifyVisual()
+        }
     }
 
-    @Published var keycapOpacity: Double {
-        didSet { defaults.set(keycapOpacity, forKey: Keys.keycapOpacity) }
+    var keycapOpacity: Double {
+        didSet {
+            defaults.set(keycapOpacity, forKey: Keys.keycapOpacity)
+            notifyVisual()
+        }
     }
 
-    @Published var chromeFadeDelay: Double {
-        didSet { defaults.set(chromeFadeDelay, forKey: Keys.chromeFadeDelay) }
+    var chromeFadeDelay: Double {
+        didSet {
+            defaults.set(chromeFadeDelay, forKey: Keys.chromeFadeDelay)
+            notifyVisual()
+        }
     }
 
-    @Published var scaleMultiplier: Double {
-        didSet { defaults.set(scaleMultiplier, forKey: Keys.scaleMultiplier) }
+    var scaleMultiplier: Double {
+        didSet {
+            defaults.set(scaleMultiplier, forKey: Keys.scaleMultiplier)
+            notifyVisual()
+        }
     }
 
     // MARK: - Layout Source
 
-    /// Oryx share URL or layout hash ID
-    @Published var layoutURL: String? {
+    var layoutURL: String? {
         didSet {
             if let url = layoutURL {
                 defaults.set(url, forKey: Keys.layoutURL)
             } else {
                 defaults.removeObject(forKey: Keys.layoutURL)
             }
+            notifyLayout()
         }
     }
-
-    // MARK: - HAR Path
 
     // MARK: - Init
 

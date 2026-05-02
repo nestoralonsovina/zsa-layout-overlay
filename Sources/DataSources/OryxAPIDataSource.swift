@@ -324,6 +324,26 @@ fileprivate struct APIKeyAction: Decodable {
     let color: String?
     let macro: String?
     let modifiers: APIKeyModifiers?
+
+    private enum CodingKeys: String, CodingKey {
+        case code, layer, color, macro, modifiers
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        code = try container.decodeIfPresent(String.self, forKey: .code)
+        layer = try container.decodeIfPresent(Int.self, forKey: .layer)
+        color = try container.decodeIfPresent(String.self, forKey: .color)
+        modifiers = try container.decodeIfPresent(APIKeyModifiers.self, forKey: .modifiers)
+
+        if let macroString = try? container.decodeIfPresent(String.self, forKey: .macro) {
+            macro = macroString
+        } else if container.contains(.macro) {
+            macro = "(complex macro)"
+        } else {
+            macro = nil
+        }
+    }
 }
 
 fileprivate struct APIKeyModifiers: Decodable {
