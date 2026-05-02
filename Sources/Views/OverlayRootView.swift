@@ -9,6 +9,7 @@ private struct OverlayMetrics {
 struct OverlayRootView: View {
     let model: OverlayViewModel
     @State private var chromeVisible = true
+    @StateObject private var prefs = PreferencesStore.shared
 
     private var activeError: ErrorState {
         if let errorCase = model.activeErrors.first(where: { if case .error = $0 { return true }; return false }) {
@@ -54,7 +55,7 @@ struct OverlayRootView: View {
 
             ZStack(alignment: .topLeading) {
                 ForEach(model.layout.keys) { key in
-                    PositionedKeyView(key: key)
+                    PositionedKeyView(key: key, opacity: prefs.keycapOpacity)
                 }
             }
             .frame(width: model.layout.bounds.width, height: model.layout.bounds.height, alignment: .topLeading)
@@ -64,6 +65,7 @@ struct OverlayRootView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, DesignTokens.Layout.keyboardVerticalInset)
         }
+        .opacity(prefs.overlayOpacity)
         .task(id: chromeActivityToken) {
             await refreshChromeVisibility()
         }
@@ -173,7 +175,7 @@ struct OverlayRootView: View {
             return
         }
 
-        try? await Task.sleep(for: .seconds(DesignTokens.Animation.chromeFadeDelay))
+        try? await Task.sleep(for: .seconds(prefs.chromeFadeDelay))
 
         if Task.isCancelled || pressedKeyCount > 0 {
             return
@@ -189,6 +191,7 @@ struct OverlayRootView: View {
 
 struct PositionedKeyView: View {
     let key: RenderedKey
+    let opacity: Double
 
     var body: some View {
         KeycapCard(key: key)
@@ -198,5 +201,6 @@ struct PositionedKeyView: View {
                 x: key.frame.minX + key.frame.width / 2,
                 y: key.frame.minY + key.frame.height / 2
             )
+            .opacity(opacity)
     }
 }

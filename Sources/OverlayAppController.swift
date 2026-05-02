@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import Combine
 
 @MainActor
 final class OverlayAppController {
@@ -9,6 +10,7 @@ final class OverlayAppController {
     private var liveDataSource: KeyboardDataSource
     private var windowController: OverlayWindowController?
     private var activeTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
     init(keyboard: KeyboardDefinition = KeyboardRegistry.default) {
         self.model = OverlayViewModel(keyboard: keyboard)
@@ -19,14 +21,44 @@ final class OverlayAppController {
             captureDataSource = nil
             liveDataSource = MockKeyboardDataSource()
         }
+
+        observePreferences()
+    }
+
+    private func observePreferences() {
+        PreferencesStore.shared.objectWillChange
+            .sink { [weak self] in
+                self?.updateWindowPosition()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateWindowPosition() {
+        guard let window = windowController?.window else { return }
+        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let contentSize = window.frame.size
+        let prefs = PreferencesStore.shared
+
+        let origin: CGPoint
+        switch prefs.windowPosition {
+        case .bottomCenter:
+            origin = CGPoint(x: screen.midX - (contentSize.width / 2), y: screen.minY + 2)
+        case .bottomLeft:
+            origin = CGPoint(x: screen.minX + 8, y: screen.minY + 2)
+        case .bottomRight:
+            origin = CGPoint(x: screen.maxX - contentSize.width - 8, y: screen.minY + 2)
+        }
+
+        window.setFrameOrigin(origin)
     }
 
     private static func resolvedHARPath() -> String? {
+        let prefs = PreferencesStore.shared
         let environmentHARPath = ProcessInfo.processInfo.environment["ZSA_LAYOUT_HAR"]
         let bundleHARPath = Bundle.main.path(forResource: "typ.ing", ofType: "har")
         let sharedHARPath = "/Users/Shared/typ.ing.har"
 
-        for candidate in [environmentHARPath, bundleHARPath, sharedHARPath] {
+        for candidate in [prefs.harFilePath, environmentHARPath, bundleHARPath, sharedHARPath] {
             guard let candidate else { continue }
             if FileManager.default.fileExists(atPath: candidate) {
                 return candidate
@@ -36,9 +68,14 @@ final class OverlayAppController {
         return nil
     }
 
+    var window: NSWindow? {
+        windowController?.window
+    }
+
     func start() {
         windowController = OverlayWindowController(model: model)
         windowController?.showWindow()
+        updateWindowPosition()
 
         activeTask = Task {
             keymappProbe.onError = { [weak model] state in
@@ -85,13 +122,14 @@ final class OverlayAppController {
 
 @MainActor
 final class OverlayWindowController {
-    private let window: NSWindow
+    private(set) var window: NSWindow
 
     init(model: OverlayViewModel) {
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let prefs = PreferencesStore.shared
         let contentSize = NSSize(
-            width: min(DesignTokens.Layout.preferredHUDWidth, max(DesignTokens.Layout.minHUDWidth, screen.width - 72)),
-            height: min(DesignTokens.Layout.preferredHUDHeight, max(DesignTokens.Layout.minHUDHeight, screen.height * 0.36))
+            width: min(DesignTokens.Layout.preferredHUDWidth * prefs.scaleMultiplier, max(DesignTokens.Layout.minHUDWidth * prefs.scaleMultiplier, screen.width - 72)),
+            height: min(DesignTokens.Layout.preferredHUDHeight * prefs.scaleMultiplier, max(DesignTokens.Layout.minHUDHeight * prefs.scaleMultiplier, screen.height * 0.36))
         )
         let origin = CGPoint(
             x: screen.midX - (contentSize.width / 2),

@@ -6,6 +6,7 @@ final class MenuBarController {
     private let statusItem: NSStatusItem
     private let showHideItem: NSMenuItem
     private var isOverlayVisible: Bool = true
+    private let preferencesController = PreferencesWindowController()
 
     init(appController: OverlayAppController) {
         self.appController = appController
@@ -26,6 +27,13 @@ final class MenuBarController {
         )
         showHideItem.target = self
 
+        let preferencesItem = NSMenuItem(
+            title: "Preferences...",
+            action: #selector(_showPreferences),
+            keyEquivalent: ","
+        )
+        preferencesItem.target = self
+
         let restartItem = NSMenuItem(
             title: "Restart",
             action: #selector(_restartApp),
@@ -42,6 +50,7 @@ final class MenuBarController {
 
         let menu = NSMenu()
         menu.addItem(showHideItem)
+        menu.addItem(preferencesItem)
         menu.addItem(restartItem)
         menu.addItem(.separator())
         menu.addItem(quitItem)
@@ -58,6 +67,10 @@ final class MenuBarController {
             showHideItem.title = "Hide Overlay"
         }
         isOverlayVisible.toggle()
+    }
+
+    @objc private func _showPreferences() {
+        preferencesController.show()
     }
 
     @objc private func _restartApp() {
