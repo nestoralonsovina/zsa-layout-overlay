@@ -16,7 +16,7 @@ let package = Package(
             path: "HIDBridgeSources",
             publicHeadersPath: "include",
             cSettings: [
-                .unsafeFlags(["-I/opt/homebrew/Cellar/hidapi/0.15.0/include"])
+                .unsafeFlags(["-I/opt/homebrew/opt/hidapi/include"])
             ],
             linkerSettings: [
                 .unsafeFlags(["-L/opt/homebrew/lib", "-lhidapi"])
@@ -37,7 +37,7 @@ let package = Package(
             name: "ZSAHIDProbe",
             path: "ProbeSources",
             cSettings: [
-                .unsafeFlags(["-I/opt/homebrew/Cellar/hidapi/0.15.0/include"])
+                .unsafeFlags(["-I/opt/homebrew/opt/hidapi/include"])
             ],
             linkerSettings: [
                 .unsafeFlags(["-L/opt/homebrew/lib", "-lhidapi"])
