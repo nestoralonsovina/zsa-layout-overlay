@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 
 @MainActor
 final class MenuBarController {
@@ -7,6 +8,7 @@ final class MenuBarController {
     private let showHideItem: NSMenuItem
     private var isOverlayVisible: Bool = true
     private let preferencesController = PreferencesWindowController()
+    private var cancellables = Set<AnyCancellable>()
 
     init(appController: OverlayAppController) {
         self.appController = appController
@@ -56,6 +58,23 @@ final class MenuBarController {
         menu.addItem(quitItem)
 
         statusItem.menu = menu
+
+        observePreferences()
+    }
+
+    private func observePreferences() {
+        PreferencesStore.shared.objectWillChange
+            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.performRestart()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func performRestart() {
+        appController.restart()
+        isOverlayVisible = true
+        showHideItem.title = "Hide Overlay"
     }
 
     @objc private func _toggleOverlay() {
@@ -74,9 +93,7 @@ final class MenuBarController {
     }
 
     @objc private func _restartApp() {
-        appController.restart()
-        isOverlayVisible = true
-        showHideItem.title = "Hide Overlay"
+        performRestart()
     }
 
     @objc private func quitApp() {
