@@ -105,7 +105,9 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
             }
         case 5:
             guard let layer = bytes.first else { return }
-            activeLayerIndex = Int(layer)
+            let newLayer = Int(layer)
+            guard newLayer != activeLayerIndex else { return }
+            activeLayerIndex = newLayer
             if eventLoggingEnabled {
                 log("Layer -> \(activeLayerIndex)")
             }
@@ -115,21 +117,25 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
                 log("Key down payload undecoded: \(hexDump(report))")
                 return
             }
-            pressedKeyIndices.insert(keyIndex)
+            let changed = pressedKeyIndices.insert(keyIndex).inserted
             if eventLoggingEnabled {
                 log("Key down -> physical index \(keyIndex)")
             }
-            await pushLiveState()
+            if changed {
+                await pushLiveState()
+            }
         case 7:
             guard let keyIndex = decodeKeyIndex(from: bytes) else {
                 log("Key up payload undecoded: \(hexDump(report))")
                 return
             }
-            pressedKeyIndices.remove(keyIndex)
+            let changed = pressedKeyIndices.remove(keyIndex) != nil
             if eventLoggingEnabled {
                 log("Key up -> physical index \(keyIndex)")
             }
-            await pushLiveState()
+            if changed {
+                await pushLiveState()
+            }
         default:
             if eventLoggingEnabled {
                 log("Unhandled report -> \(hexDump(report))")

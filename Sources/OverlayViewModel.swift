@@ -49,6 +49,9 @@ final class OverlayViewModel {
     }
 
     func applyLiveState(_ state: KeyboardLiveState) {
+        let layerChanged = state.activeLayerIndex.map { $0 != self.activeLayerIndex } ?? false
+        let keysChanged = state.pressedKeyIndices != self.pressedKeyIndices
+
         sourceName = state.sourceName
         connectionState = state.connectionState
         if let activeLayerIndex = state.activeLayerIndex {
@@ -58,14 +61,16 @@ final class OverlayViewModel {
         if let statusText = state.statusText {
             self.statusText = statusText
         }
-        rerender()
+
+        if layerChanged || keysChanged {
+            rerender()
+        }
     }
 
     func applyStatus(sourceName: String, connectionState: String, statusText: String) {
         self.sourceName = sourceName
         self.connectionState = connectionState
         self.statusText = statusText
-        rerender()
     }
 
     func reset() {
