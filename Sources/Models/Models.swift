@@ -7,6 +7,12 @@ struct RenderedKeyboardLayout: Hashable {
     let activeLayerIndex: Int
     let statusText: String
     let keys: [RenderedKey]
+
+    var bounds: CGRect {
+        keys.reduce(into: CGRect.null) { partial, key in
+            partial = partial.union(key.frame)
+        }
+    }
 }
 
 struct RenderedKey: Identifiable, Hashable {
@@ -48,30 +54,30 @@ enum KeyVisualClass: String, Hashable {
     var fillColor: Color {
         switch self {
         case .neutral:
-            return Color.white.opacity(0.72)
+            return Color.white.opacity(0.66)
         case .modifier:
-            return Color(red: 0.85, green: 0.96, blue: 0.62)
+            return Color(red: 0.86, green: 0.95, blue: 0.70).opacity(0.72)
         case .magic:
-            return Color(red: 0.75, green: 0.86, blue: 0.98)
+            return Color(red: 0.79, green: 0.88, blue: 0.98).opacity(0.72)
         case .macro:
-            return Color(red: 0.87, green: 0.84, blue: 0.99)
+            return Color(red: 0.89, green: 0.86, blue: 0.98).opacity(0.72)
         case .shine:
-            return Color(red: 0.99, green: 0.90, blue: 0.54)
+            return Color(red: 0.98, green: 0.91, blue: 0.62).opacity(0.74)
         case .custom:
-            return Color(red: 0.99, green: 0.73, blue: 0.45)
+            return Color(red: 0.98, green: 0.78, blue: 0.56).opacity(0.74)
         case .disabled:
-            return Color.white.opacity(0.68)
+            return Color.white.opacity(0.52)
         case .transparent:
-            return Color.white.opacity(0.42)
+            return Color.white.opacity(0.20)
         }
     }
 
     var foregroundColor: Color {
         switch self {
         case .modifier, .magic, .macro, .shine, .custom:
-            return Color.black.opacity(0.72)
+            return Color.black.opacity(0.84)
         case .disabled, .transparent, .neutral:
-            return Color.primary.opacity(0.82)
+            return Color.black.opacity(0.82)
         }
     }
 }

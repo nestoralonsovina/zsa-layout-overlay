@@ -1,5 +1,11 @@
 import SwiftUI
 
+private struct OverlayMetrics {
+    let keyboardScale: CGFloat
+    let keyboardSize: CGSize
+    let keyboardOffset: CGSize
+}
+
 struct OverlayRootView: View {
     let model: OverlayViewModel
     @State private var chromeVisible = true
@@ -43,111 +49,105 @@ struct OverlayRootView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.hudVStack) {
-            if model.activeErrors.contains(where: { $0.isActive }) {
-                errorBanner
-            }
-
-            HStack(alignment: .top, spacing: DesignTokens.Spacing.hudHStack) {
-                header
-                Spacer(minLength: 0)
-                statusBadge
-            }
+        GeometryReader { proxy in
+            let metrics = overlayMetrics(in: proxy.size)
 
             ZStack(alignment: .topLeading) {
-                Color.clear
-                ZStack(alignment: .topLeading) {
-                    ForEach(model.layout.keys) { key in
-                        PositionedKeyView(key: key)
-                    }
+                ForEach(model.layout.keys) { key in
+                    PositionedKeyView(key: key)
                 }
-                .frame(
-                    width: DesignTokens.Layout.keyboardCanvasWidth,
-                    height: DesignTokens.Layout.keyboardCanvasHeight,
-                    alignment: .topLeading
-                )
-                .scaleEffect(DesignTokens.Layout.keyboardScale, anchor: .topLeading)
             }
-            .frame(
-                width: DesignTokens.Layout.keyboardCanvasWidth * DesignTokens.Layout.keyboardScale,
-                height: DesignTokens.Layout.keyboardCanvasHeight * DesignTokens.Layout.keyboardScale,
-                alignment: .topLeading
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.keyboardClip, style: .continuous))
+            .frame(width: model.layout.bounds.width, height: model.layout.bounds.height, alignment: .topLeading)
+            .offset(metrics.keyboardOffset)
+            .scaleEffect(metrics.keyboardScale, anchor: .topLeading)
+            .frame(width: metrics.keyboardSize.width, height: metrics.keyboardSize.height, alignment: .topLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .padding(.bottom, DesignTokens.Layout.keyboardVerticalInset)
         }
-        .padding(.horizontal, DesignTokens.Spacing.hudHStack)
-        .padding(.vertical, DesignTokens.Spacing.hudVertical)
-        .frame(
-            width: DesignTokens.Layout.hudWidth,
-            height: DesignTokens.Layout.hudHeight,
-            alignment: .topLeading
-        )
-        .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.hudPanel, style: .continuous)
-                .fill(
-                    Color.white.opacity(DesignTokens.Opacity.chromeBackground)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.hudPanel, style: .continuous)
-                        .strokeBorder(Color.white.opacity(DesignTokens.Opacity.chromeBorder), lineWidth: 1)
-                )
-        )
-        .overlay(alignment: .bottomLeading) {
-            footer
-                .padding(.horizontal, DesignTokens.Spacing.hudHStack)
-                .padding(.bottom, DesignTokens.Spacing.hudVStack)
-        }
-        .compositingGroup()
-        .shadow(
-            color: .black.opacity(DesignTokens.Shadow.hudOpacity),
-            radius: DesignTokens.Shadow.hudRadius,
-            x: 0,
-            y: DesignTokens.Shadow.hudY
-        )
         .task(id: chromeActivityToken) {
             await refreshChromeVisibility()
         }
     }
 
+    private func overlayMetrics(in size: CGSize) -> OverlayMetrics {
+        let bounds = model.layout.bounds
+        let availableWidth = max(
+            size.width - (DesignTokens.Spacing.hudHStack * 2) - (DesignTokens.Layout.keyboardHorizontalInset * 2),
+            1
+        )
+        let availableHeight = max(
+            size.height - DesignTokens.Layout.chromeReservedHeight - (DesignTokens.Layout.keyboardVerticalInset * 2),
+            1
+        )
+
+        let widthScale = availableWidth / max(bounds.width, 1)
+        let heightScale = availableHeight / max(bounds.height, 1)
+        let keyboardScale = min(
+            DesignTokens.Layout.maxKeyboardScale,
+            max(DesignTokens.Layout.minKeyboardScale, min(widthScale, heightScale))
+        )
+
+        return OverlayMetrics(
+            keyboardScale: keyboardScale,
+            keyboardSize: CGSize(width: bounds.width * keyboardScale, height: bounds.height * keyboardScale),
+            keyboardOffset: CGSize(width: -bounds.minX, height: -bounds.minY)
+        )
+    }
+
     private var header: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.headerLeading) {
-            Text("\(model.layout.name)")
-                .font(.custom(DesignTokens.Font.headerSemibold, size: DesignTokens.FontSize.hudTitle))
-                .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.headerPrimary))
-            Text("Layer \(model.layout.activeLayerIndex) • \(String.safeText(model.layout.activeLayerName))")
-                .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudSubtitle))
-                .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.headerSecondary))
-        }
-        .opacity(chromeVisible ? 1 : 0)
-        .offset(y: chromeVisible ? 0 : -6)
-        .animation(.easeInOut(duration: DesignTokens.Animation.chromeShow), value: chromeVisible)
+        chromeAnimation(
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.headerLeading) {
+                Text(model.layout.name)
+                    .font(.custom(DesignTokens.Font.headerSemibold, size: DesignTokens.FontSize.hudTitle))
+                    .foregroundStyle(chromeTextColor(DesignTokens.Opacity.headerPrimary))
+                Text("Layer \(model.layout.activeLayerIndex) • \(String.safeText(model.layout.activeLayerName))")
+                    .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudSubtitle))
+                    .foregroundStyle(chromeTextColor(DesignTokens.Opacity.headerSecondary))
+            }
+        )
     }
 
     private var statusBadge: some View {
-        VStack(alignment: .trailing, spacing: DesignTokens.Spacing.headerLeading) {
-            Text(model.sourceName)
-                .font(.custom(DesignTokens.Font.headerSemibold, size: DesignTokens.FontSize.hudCaption))
-                .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.badgeLabel))
-                .padding(.horizontal, DesignTokens.Spacing.badgeHorizontal)
-                .padding(.vertical, DesignTokens.Spacing.badgeVertical)
-                .background(Capsule().fill(Color.white.opacity(DesignTokens.Opacity.badgeBackground)))
-            Text(model.connectionState)
-                .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudCaption))
-                .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.statusSecondary))
-        }
-        .opacity(chromeVisible ? 1 : 0)
-        .offset(y: chromeVisible ? 0 : -6)
-        .animation(.easeInOut(duration: DesignTokens.Animation.chromeShow), value: chromeVisible)
+        chromeAnimation(
+            VStack(alignment: .trailing, spacing: DesignTokens.Spacing.headerLeading) {
+                Text(model.sourceName)
+                    .font(.custom(DesignTokens.Font.headerSemibold, size: DesignTokens.FontSize.hudCaption))
+                    .foregroundStyle(chromeTextColor(DesignTokens.Opacity.badgeLabel))
+                    .padding(.horizontal, DesignTokens.Spacing.badgeHorizontal)
+                    .padding(.vertical, DesignTokens.Spacing.badgeVertical)
+                    .background(Capsule().fill(Color.white.opacity(DesignTokens.Opacity.badgeBackground)))
+                Text(model.connectionState)
+                    .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudCaption))
+                    .foregroundStyle(chromeTextColor(DesignTokens.Opacity.statusSecondary))
+            }
+        )
     }
 
     private var footer: some View {
-        Text(String.safeText(model.layout.statusText))
-            .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudCaption))
-            .foregroundStyle(Color.black.opacity(DesignTokens.Opacity.footerLabel))
-            .lineLimit(1)
+        footerAnimation(
+            Text(String.safeText(model.layout.statusText))
+                .font(.custom(DesignTokens.Font.headerMedium, size: DesignTokens.FontSize.hudCaption))
+                .foregroundStyle(chromeTextColor(DesignTokens.Opacity.footerLabel))
+                .lineLimit(1)
+        )
+    }
+
+    private func chromeAnimation<V: View>(_ view: V) -> some View {
+        view
+            .opacity(chromeVisible ? 1 : 0)
+            .offset(y: chromeVisible ? 0 : -6)
+            .animation(.easeInOut(duration: DesignTokens.Animation.chromeShow), value: chromeVisible)
+    }
+
+    private func footerAnimation<V: View>(_ view: V) -> some View {
+        view
             .opacity(chromeVisible ? 1 : 0)
             .offset(y: chromeVisible ? 0 : 4)
             .animation(.easeInOut(duration: DesignTokens.Animation.chromeShow), value: chromeVisible)
+    }
+
+    private func chromeTextColor(_ opacity: Double) -> Color {
+        Color.black.opacity(opacity)
     }
 
     private var pressedKeyCount: Int {
@@ -185,7 +185,6 @@ struct OverlayRootView: View {
             }
         }
     }
-
 }
 
 struct PositionedKeyView: View {

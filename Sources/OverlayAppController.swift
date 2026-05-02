@@ -87,13 +87,16 @@ final class OverlayAppController {
 @MainActor
 final class OverlayWindowController {
     private let window: NSWindow
-    private let contentSize = NSSize(width: 700, height: 250)
 
     init(model: OverlayViewModel) {
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let contentSize = NSSize(
+            width: min(DesignTokens.Layout.preferredHUDWidth, max(DesignTokens.Layout.minHUDWidth, screen.width - 72)),
+            height: min(DesignTokens.Layout.preferredHUDHeight, max(DesignTokens.Layout.minHUDHeight, screen.height * 0.36))
+        )
         let origin = CGPoint(
             x: screen.midX - (contentSize.width / 2),
-            y: screen.minY + 18
+            y: screen.minY + 2
         )
         let frame = NSRect(origin: origin, size: contentSize)
 
@@ -111,6 +114,7 @@ final class OverlayWindowController {
         window.backgroundColor = .clear
         window.hasShadow = false
         window.ignoresMouseEvents = true
+        window.sharingType = .none
         window.level = .screenSaver
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         window.isMovableByWindowBackground = false
