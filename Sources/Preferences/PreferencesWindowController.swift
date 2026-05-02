@@ -16,7 +16,7 @@ final class PreferencesWindowController {
         let hostingView = NSHostingView(rootView: view)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 340),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 400),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -38,14 +38,35 @@ struct PreferencesView: View {
 
     var body: some View {
         Form {
-            Section("Window") {
-                Picker("Position", selection: $prefs.windowPosition) {
-                    ForEach(PreferencesStore.WindowPosition.allCases) { position in
-                        Text(position.displayName).tag(position)
-                    }
-                }
-                .pickerStyle(.segmented)
+            Section {
+                Toggle("Follow focused screen", isOn: $prefs.followFocusedScreen)
+            }
 
+            Section("Position") {
+                HStack {
+                    Text("X")
+                        .frame(width: 20, alignment: .leading)
+                    Slider(value: $prefs.positionX, in: 0...1, step: 0.01)
+                    Text(String(format: "%d%%", Int(prefs.positionX * 100)))
+                        .monospacedDigit()
+                        .frame(width: 38, alignment: .trailing)
+                }
+
+                HStack {
+                    Text("Y")
+                        .frame(width: 20, alignment: .leading)
+                    Slider(value: $prefs.positionY, in: 0...1, step: 0.01)
+                    Text(String(format: "%d%%", Int(prefs.positionY * 100)))
+                        .monospacedDigit()
+                        .frame(width: 38, alignment: .trailing)
+                }
+
+                Text("0% Y = bottom edge, 100% Y = top edge")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Size") {
                 HStack {
                     Text("Scale")
                     Slider(value: $prefs.scaleMultiplier, in: 0.5...1.5, step: 0.05)
@@ -57,7 +78,7 @@ struct PreferencesView: View {
 
             Section("Appearance") {
                 HStack {
-                    Text("Overlay Opacity")
+                    Text("Overlay")
                     Slider(value: $prefs.overlayOpacity, in: 0.2...1.0, step: 0.05)
                     Text(String(format: "%.0f%%", prefs.overlayOpacity * 100))
                         .monospacedDigit()
@@ -65,7 +86,7 @@ struct PreferencesView: View {
                 }
 
                 HStack {
-                    Text("Keycap Opacity")
+                    Text("Keys")
                     Slider(value: $prefs.keycapOpacity, in: 0.2...1.0, step: 0.05)
                     Text(String(format: "%.0f%%", prefs.keycapOpacity * 100))
                         .monospacedDigit()
@@ -73,7 +94,7 @@ struct PreferencesView: View {
                 }
 
                 HStack {
-                    Text("Chrome Fade Delay")
+                    Text("Fade")
                     Slider(value: $prefs.chromeFadeDelay, in: 0.5...6.0, step: 0.5)
                     Text(String(format: "%.1fs", prefs.chromeFadeDelay))
                         .monospacedDigit()
@@ -111,7 +132,7 @@ struct PreferencesView: View {
         }
         .formStyle(.grouped)
         .padding()
-        .frame(minWidth: 400, minHeight: 300)
+        .frame(minWidth: 400, minHeight: 360)
     }
 
     private func chooseHARFile() {

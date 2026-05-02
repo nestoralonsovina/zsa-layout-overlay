@@ -78,7 +78,8 @@ final class OverlayWindowControllerTests: XCTestCase {
 
     func test_hideWindowMethodExists() {
         let model = OverlayViewModel(keyboard: KeyboardRegistry.default)
-        let controller = OverlayWindowController(model: model)
+        let mainScreen = NSScreen.main ?? NSScreen.screens.first!
+        let controller = OverlayWindowController(model: model, screen: mainScreen)
 
         XCTAssertNotNil(controller)
         controller.hideWindow()

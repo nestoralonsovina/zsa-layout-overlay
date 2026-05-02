@@ -15,7 +15,7 @@ struct MockKeyboardDataSource: KeyboardDataSource {
         ]
 
         var index = 0
-        while true {
+        while !Task.isCancelled {
             let frame = frames[index % frames.count]
             model.applyLiveState(
                 KeyboardLiveState(
@@ -28,7 +28,9 @@ struct MockKeyboardDataSource: KeyboardDataSource {
             )
 
             index += 1
-            try? await Task.sleep(for: .milliseconds(800))
+            guard let _ = try? await Task.sleep(for: .milliseconds(800)) else {
+                break
+            }
         }
     }
 }

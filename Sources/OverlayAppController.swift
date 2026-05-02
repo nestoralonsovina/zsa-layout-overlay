@@ -9,6 +9,7 @@ final class OverlayAppController {
     private var liveDataSource: KeyboardDataSource
     private var windowController: OverlayWindowController?
     private var activeTask: Task<Void, Never>?
+    private var lastMainScreen: NSScreen?
 
     init(keyboard: KeyboardDefinition = KeyboardRegistry.default) {
         self.model = OverlayViewModel(keyboard: keyboard)
@@ -38,8 +39,12 @@ final class OverlayAppController {
     }
 
     func start() {
-        windowController = OverlayWindowController(model: model)
+        let targetScreen = currentTargetScreen()
+        lastMainScreen = targetScreen
+        windowController = OverlayWindowController(model: model, screen: targetScreen)
         windowController?.showWindow()
+
+        observeScreenChanges()
 
         activeTask = Task {
             keymappProbe.onError = { [weak model] state in
@@ -57,6 +62,45 @@ final class OverlayAppController {
         }
     }
 
+    // MARK: - Screen Following
+
+    private func observeScreenChanges() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.repositionToFocusedScreenIfNeeded()
+            }
+        }
+    }
+
+    private func currentTargetScreen() -> NSScreen {
+        if PreferencesStore.shared.followFocusedScreen {
+            if let mainScreen = NSScreen.main {
+                return mainScreen
+            }
+        }
+        return NSScreen.main ?? fallbackScreen()
+    }
+
+    private func repositionToFocusedScreenIfNeeded() {
+        guard PreferencesStore.shared.followFocusedScreen else { return }
+
+        let targetScreen = currentTargetScreen()
+        guard targetScreen != lastMainScreen else { return }
+
+        lastMainScreen = targetScreen
+        windowController?.reposition(on: targetScreen)
+    }
+
+    private func fallbackScreen() -> NSScreen {
+        NSScreen.screens.first ?? NSScreen()
+    }
+
+    // MARK: - Window Control
+
     func showWindow() {
         windowController?.showWindow()
     }
@@ -70,6 +114,7 @@ final class OverlayAppController {
         activeTask = nil
         windowController?.hideWindow()
         windowController = nil
+        lastMainScreen = nil
         model.reset()
 
         if let harPath = Self.resolvedHARPath() {
@@ -88,23 +133,14 @@ final class OverlayAppController {
 final class OverlayWindowController {
     private let window: NSWindow
 
-    init(model: OverlayViewModel) {
-        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+    init(model: OverlayViewModel, screen: NSScreen) {
+        let screenFrame = screen.visibleFrame
         let prefs = PreferencesStore.shared
         let contentSize = NSSize(
-            width: min(DesignTokens.Layout.preferredHUDWidth * prefs.scaleMultiplier, max(DesignTokens.Layout.minHUDWidth * prefs.scaleMultiplier, screen.width - 72)),
-            height: min(DesignTokens.Layout.preferredHUDHeight * prefs.scaleMultiplier, max(DesignTokens.Layout.minHUDHeight * prefs.scaleMultiplier, screen.height * 0.36))
+            width: min(DesignTokens.Layout.preferredHUDWidth * prefs.scaleMultiplier, max(DesignTokens.Layout.minHUDWidth * prefs.scaleMultiplier, screenFrame.width - 72)),
+            height: min(DesignTokens.Layout.preferredHUDHeight * prefs.scaleMultiplier, max(DesignTokens.Layout.minHUDHeight * prefs.scaleMultiplier, screenFrame.height * 0.36))
         )
-
-        let origin: CGPoint
-        switch prefs.windowPosition {
-        case .bottomCenter:
-            origin = CGPoint(x: screen.midX - (contentSize.width / 2), y: screen.minY + 2)
-        case .bottomLeft:
-            origin = CGPoint(x: screen.minX + 8, y: screen.minY + 2)
-        case .bottomRight:
-            origin = CGPoint(x: screen.maxX - contentSize.width - 8, y: screen.minY + 2)
-        }
+        let origin = Self.originFor(screenFrame: screenFrame, contentSize: contentSize, positionX: prefs.positionX, positionY: prefs.positionY)
         let frame = NSRect(origin: origin, size: contentSize)
 
         let view = OverlayRootView(model: model)
@@ -129,6 +165,23 @@ final class OverlayWindowController {
         window.orderFrontRegardless()
 
         self.window = window
+    }
+
+    func reposition(on screen: NSScreen) {
+        let screenFrame = screen.visibleFrame
+        let contentSize = window.frame.size
+        let prefs = PreferencesStore.shared
+        let origin = Self.originFor(screenFrame: screenFrame, contentSize: contentSize, positionX: prefs.positionX, positionY: prefs.positionY)
+        window.setFrameOrigin(origin)
+    }
+
+    private static func originFor(screenFrame: CGRect, contentSize: CGSize, positionX: Double, positionY: Double) -> CGPoint {
+        let xRange = max(screenFrame.width - contentSize.width, 0)
+        let yRange = max(screenFrame.height - contentSize.height, 0)
+        return CGPoint(
+            x: screenFrame.minX + xRange * positionX,
+            y: screenFrame.minY + yRange * positionY
+        )
     }
 
     func showWindow() {

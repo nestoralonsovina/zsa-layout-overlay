@@ -9,52 +9,35 @@ final class PreferencesStore: ObservableObject {
 
     // MARK: - Window Position
 
-    enum WindowPosition: String, CaseIterable, Identifiable {
-        case bottomCenter = "bottom-center"
-        case bottomLeft = "bottom-left"
-        case bottomRight = "bottom-right"
-
-        var id: String { rawValue }
-
-        var displayName: String {
-            switch self {
-            case .bottomCenter: return "Bottom Center"
-            case .bottomLeft: return "Bottom Left"
-            case .bottomRight: return "Bottom Right"
-            }
-        }
+    @Published var positionX: Double {
+        didSet { defaults.set(positionX, forKey: Keys.positionX) }
     }
 
-    @Published var windowPosition: WindowPosition {
-        didSet {
-            defaults.set(windowPosition.rawValue, forKey: Keys.windowPosition)
-        }
+    @Published var positionY: Double {
+        didSet { defaults.set(positionY, forKey: Keys.positionY) }
+    }
+
+    /// When true, overlay follows whichever screen has the active app
+    @Published var followFocusedScreen: Bool {
+        didSet { defaults.set(followFocusedScreen, forKey: Keys.followFocusedScreen) }
     }
 
     // MARK: - Appearance
 
     @Published var overlayOpacity: Double {
-        didSet {
-            defaults.set(overlayOpacity, forKey: Keys.overlayOpacity)
-        }
+        didSet { defaults.set(overlayOpacity, forKey: Keys.overlayOpacity) }
     }
 
     @Published var keycapOpacity: Double {
-        didSet {
-            defaults.set(keycapOpacity, forKey: Keys.keycapOpacity)
-        }
+        didSet { defaults.set(keycapOpacity, forKey: Keys.keycapOpacity) }
     }
 
     @Published var chromeFadeDelay: Double {
-        didSet {
-            defaults.set(chromeFadeDelay, forKey: Keys.chromeFadeDelay)
-        }
+        didSet { defaults.set(chromeFadeDelay, forKey: Keys.chromeFadeDelay) }
     }
 
     @Published var scaleMultiplier: Double {
-        didSet {
-            defaults.set(scaleMultiplier, forKey: Keys.scaleMultiplier)
-        }
+        didSet { defaults.set(scaleMultiplier, forKey: Keys.scaleMultiplier) }
     }
 
     // MARK: - HAR Path
@@ -72,10 +55,9 @@ final class PreferencesStore: ObservableObject {
     // MARK: - Init
 
     private init() {
-        self.windowPosition = WindowPosition(
-            rawValue: defaults.string(forKey: Keys.windowPosition) ?? "bottom-center"
-        ) ?? .bottomCenter
-
+        self.positionX = defaults.object(forKey: Keys.positionX) as? Double ?? 0.5
+        self.positionY = defaults.object(forKey: Keys.positionY) as? Double ?? 0.0
+        self.followFocusedScreen = defaults.object(forKey: Keys.followFocusedScreen) as? Bool ?? true
         self.overlayOpacity = defaults.object(forKey: Keys.overlayOpacity) as? Double ?? 1.0
         self.keycapOpacity = defaults.object(forKey: Keys.keycapOpacity) as? Double ?? 1.0
         self.chromeFadeDelay = defaults.object(forKey: Keys.chromeFadeDelay) as? Double ?? 2.4
@@ -84,7 +66,9 @@ final class PreferencesStore: ObservableObject {
     }
 
     func resetToDefaults() {
-        windowPosition = .bottomCenter
+        positionX = 0.5
+        positionY = 0.0
+        followFocusedScreen = true
         overlayOpacity = 1.0
         keycapOpacity = 1.0
         chromeFadeDelay = 2.4
@@ -95,7 +79,9 @@ final class PreferencesStore: ObservableObject {
     // MARK: - Keys
 
     private enum Keys {
-        static let windowPosition = "windowPosition"
+        static let positionX = "positionX"
+        static let positionY = "positionY"
+        static let followFocusedScreen = "followFocusedScreen"
         static let overlayOpacity = "overlayOpacity"
         static let keycapOpacity = "keycapOpacity"
         static let chromeFadeDelay = "chromeFadeDelay"
