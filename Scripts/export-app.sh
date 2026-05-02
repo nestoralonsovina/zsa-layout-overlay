@@ -14,13 +14,17 @@ CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
-EXECUTABLE_PATH="$ROOT_DIR/.build/debug/$EXECUTABLE_NAME"
+EXECUTABLE_PATH="$ROOT_DIR/.build/release/$EXECUTABLE_NAME"
 HIDAPI_SOURCE="/opt/homebrew/lib/libhidapi.0.dylib"
 HIDAPI_DEST="$FRAMEWORKS_DIR/libhidapi.0.dylib"
 HAR_SOURCE="${ZSA_LAYOUT_HAR:-$ROOT_DIR/typ.ing.har}"
-RESOURCE_BUNDLES=("$ROOT_DIR"/.build/debug/ZSALayoutOverlay_*.bundle)
+RESOURCE_BUNDLES=("$ROOT_DIR"/.build/release/ZSALayoutOverlay_*.bundle)
 PLIST_PATH="$CONTENTS_DIR/Info.plist"
 FORCE_REBUILD="${ZSA_EXPORT_REBUILD:-0}"
+
+# Derive version from git tag, fallback to 0.1.0
+BUNDLE_VERSION=$(git -C "$ROOT_DIR" describe --tags --always 2>/dev/null || echo "0.1.0")
+BUNDLE_BUILD=$(git -C "$ROOT_DIR" rev-list --count HEAD 2>/dev/null || echo "1")
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -28,7 +32,7 @@ if [[ "$FORCE_REBUILD" == "1" || ! -x "$EXECUTABLE_PATH" ]]; then
   env \
     CLANG_MODULE_CACHE_PATH="$ROOT_DIR/.build-cache/clang-module-cache" \
     SWIFTPM_CUSTOM_CACHE_PATH="$ROOT_DIR/.build-cache/swiftpm-cache" \
-    swift build
+    swift build -c release
 fi
 
 if [[ ! -x "$EXECUTABLE_PATH" ]]; then
@@ -50,7 +54,7 @@ cp -L "$HIDAPI_SOURCE" "$HIDAPI_DEST"
 if [[ -f "$HAR_SOURCE" ]]; then
   cp "$HAR_SOURCE" "$RESOURCES_DIR/typ.ing.har"
 else
-  echo "Warning: no typ.ing.har found at $HAR_SOURCE; app will look for /Users/Shared/typ.ing.har or ~/Downloads/typ.ing.har at runtime." >&2
+  echo "Warning: no typ.ing.har found at $HAR_SOURCE; app will look for /Users/Shared/typ.ing.har at runtime." >&2
 fi
 
 for bundle in "${RESOURCE_BUNDLES[@]}"; do
@@ -64,7 +68,7 @@ done
   @executable_path/../Frameworks/libhidapi.0.dylib \
   "$MACOS_DIR/$EXECUTABLE_NAME"
 
-cat > "$PLIST_PATH" <<'EOF'
+cat > "$PLIST_PATH" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -84,9 +88,9 @@ cat > "$PLIST_PATH" <<'EOF'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1</string>
+  <string>$BUNDLE_VERSION</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>$BUNDLE_BUILD</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>LSUIElement</key>
@@ -102,3 +106,4 @@ EOF
 
 echo "Exported app bundle:"
 echo "  $APP_DIR"
+echo "Version: $BUNDLE_VERSION ($BUNDLE_BUILD)"

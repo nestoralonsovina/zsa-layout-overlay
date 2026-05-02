@@ -1,58 +1,120 @@
-# ZSA Layout Overlay POC
+# ZSA Layout Overlay
 
-This repository is a research prototype for a macOS overlay that renders a live keyboard layout above every application without intercepting clicks.
+A macOS overlay that renders a live keyboard layout above all applications without intercepting clicks.
 
-## What this POC proves
+## Features
 
-- A native macOS overlay window can stay above other apps.
-- The overlay can be transparent and non-interactive.
-- The UI can be fed by a pluggable keyboard data source.
-- The project can detect whether a local Keymapp Unix socket is present.
+- **Live key press visualization** via HID connection to ZSA keyboards
+- **Oryx layout import** from HAR capture files
+- **Extensible keyboard support** — add new layouts by defining geometry and HID profile
+- **Customizable appearance** — opacity, scale, position, and chrome fade delay via Preferences
+- **Menu bar control** — show/hide, restart, and preferences from the status bar
 
-## What this POC does not prove yet
+## Requirements
 
-- Decoding ZSA Keymapp's real gRPC protocol end-to-end.
-- Reading raw ZSA HID reports directly from the keyboard.
-- Automatically importing your exact Oryx layout.
+- macOS 14.0+
+- Swift 6.2 toolchain
+- [hidapi](https://github.com/libusb/hidapi) (for building from source)
 
-## Architecture sketch
+## Installation
 
-The app is split into three layers:
+### Prebuilt App Bundle
 
-1. Overlay window
-   - AppKit `NSWindow`
-   - borderless, transparent, click-through
-   - visible on every space and beside fullscreen apps
-
-2. Render model
-   - a local `RenderedKeyboardLayout`
-   - active layer, highlighted key positions, status text
-   - independent from transport details
-
-3. Data source
-   - `KeyboardDataSource` protocol
-   - `MockKeyboardDataSource` drives the demo now
-   - `KeymappProbeDataSource` checks for the local socket
-   - a future `KeymappGRPCDataSource` can replace the probe once the protobuf client is available
-
-## Running
+Run the export script to build a self-contained `.app` bundle:
 
 ```bash
-swift run zsa-layout-overlay
+./Scripts/export-app.sh /path/to/output
 ```
 
-## Expected behavior
+The script:
+- Builds the release binary
+- Bundles `libhidapi.0.dylib` for distribution
+- Packages any available `typ.ing.har` layout file
+- Generates `Info.plist` with version from the latest git tag
 
-- A small overlay appears near the bottom-right of the main screen.
-- Clicks pass through it to the app underneath.
-- If Keymapp is not installed or its API socket is not available, the mock source keeps the overlay animated.
-- If a Keymapp socket is present, the status line reports that the socket is reachable.
+Copy the resulting `Voyager Overlay.app` to `/Applications` or run it from anywhere.
 
-## Next step for real keyboard data
+### Build from Source
 
-There are two viable paths:
+```bash
+# Install hidapi (required for HID bridge)
+brew install hidapi
 
-1. Add a generated Swift gRPC client from `zsa/kontroll`'s `proto/keymapp.proto`.
-2. Skip Keymapp and talk to the keyboard directly through `IOHIDManager`.
+# Build
+swift build
 
-For a fast path to a usable overlay, the first option is better.
+# Run
+swift run zsa-layout-overlay
+
+# Run tests
+swift test
+```
+
+## Configuration
+
+### Layout Import
+
+The app needs an Oryx layout HAR file to render your keymap. You can provide it via:
+
+1. **Preferences window** (recommended): Click the menu bar icon → Preferences → Choose HAR file
+2. **Bundle it with the app**: Place `typ.ing.har` next to the executable before exporting
+3. **Environment variable**: `ZSA_LAYOUT_HAR=/path/to/layout.har swift run`
+4. **Shared location**: `/Users/Shared/typ.ing.har`
+
+To capture a HAR file from Oryx:
+- Open Safari/Chrome DevTools → Network tab
+- Load your layout on [oryx.zsa.io](https://oryx.zsa.io)
+- Right-click → Save all as HAR
+
+### Preferences
+
+Access via the menu bar icon or `Cmd + ,`:
+
+- **Window Position**: Bottom Center, Bottom Left, Bottom Right
+- **Scale**: Resize the overlay (50%–150%)
+- **Overlay Opacity**: Transparency of the entire HUD
+- **Keycap Opacity**: Transparency of individual keys
+- **Chrome Fade Delay**: How long the header/footer stay visible after key activity
+
+## Architecture
+
+```
+┌─────────────────────────────────────┐
+│         OverlayWindowController      │
+│  (borderless, click-through, HUD)   │
+└─────────────┬───────────────────────┘
+              │
+┌─────────────▼───────────────────────┐
+│         OverlayViewModel            │
+│  (state: layout, layer, pressed)    │
+└─────────────┬───────────────────────┘
+              │
+┌─────────────▼───────────────────────┐
+│      KeyboardLayoutRenderer         │
+│  (renders any KeyboardDefinition)   │
+└─────────────┬───────────────────────┘
+              │
+┌─────────────▼───────────────────────┐
+│      KeyboardDataSource (protocol)  │
+│  ├─ ZSAHIDDataSource (live HID)    │
+│  ├─ OryxHARDataSource (layout)     │
+│  └─ MockKeyboardDataSource (demo)  │
+└─────────────────────────────────────┘
+```
+
+## Extending to Other Keyboards
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for a step-by-step guide to adding new keyboard layouts.
+
+## Data Sources
+
+| Source | Purpose | Status |
+|--------|---------|--------|
+| `ZSAHIDDataSource` | Live key presses from HID | Working for Voyager |
+| `OryxHARDataSource` | Parse Oryx layout from HAR | Working |
+| `MockKeyboardDataSource` | Demo animation without hardware | Working |
+| `KeymappProbeDataSource` | Detect Keymapp socket presence | Detection only |
+
+## License
+
+MIT
