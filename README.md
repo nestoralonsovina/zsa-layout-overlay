@@ -2,6 +2,8 @@
 
 A macOS overlay that renders a live keyboard layout above all applications without intercepting clicks.
 
+[![CI](https://github.com/nestoralonsovina/zsa-layout-overlay/actions/workflows/ci.yml/badge.svg)](https://github.com/nestoralonsovina/zsa-layout-overlay/actions/workflows/ci.yml)
+
 ## Features
 
 - **Live key press visualization** via HID connection to ZSA keyboards
@@ -14,18 +16,14 @@ A macOS overlay that renders a live keyboard layout above all applications witho
 ## Requirements
 
 - macOS 14.0+
-- Swift 6.2 toolchain
-- [hidapi](https://github.com/libusb/hidapi) (for building from source)
+- Swift 6.0+ toolchain
+- [hidapi](https://github.com/libusb/hidapi)
 
 ## Installation
 
-### Prebuilt App Bundle
+### Download Prebuilt App
 
-```bash
-./Scripts/export-app.sh /path/to/output
-```
-
-The script builds the release binary, bundles hidapi, and generates Info.plist.
+Grab the latest `.zip` from [Releases](https://github.com/nestoralonsovina/zsa-layout-overlay/releases), unzip, and run `ZSALayoutOverlay.app`.
 
 ### Build from Source
 
@@ -61,13 +59,15 @@ Access via `Cmd + ,` or the menu bar icon:
 ## Architecture
 
 ```
-OverlayWindowController  (borderless, click-through HUD)
-    OverlayViewModel      (state: layout, layer, pressed keys)
-        KeyboardLayoutRenderer  (renders any KeyboardDefinition)
-            KeyboardDataSource  (protocol)
-                ├─ OryxAPIDataSource   (fetches from oryx.zsa.io)
-                ├─ ZSAHIDDataSource    (live key presses)
-                └─ MockKeyboardDataSource (demo without hardware)
+AppMain → AppDelegate
+  ├─ MenuBarController          (status bar item)
+  └─ OverlayAppController       (borderless, click-through HUD window)
+       └─ OverlayViewModel      (state: layout, layer, pressed keys)
+            └─ KeyboardLayoutRenderer  (renders any KeyboardDefinition)
+                 └─ KeyboardDataSource  (protocol)
+                       ├─ OryxAPIDataSource      (fetches from oryx.zsa.io)
+                       ├─ ZSAHIDDataSource       (live key presses via HID)
+                       └─ MockKeyboardDataSource (demo without hardware)
 ```
 
 ## Data Sources
@@ -82,6 +82,10 @@ OverlayWindowController  (borderless, click-through HUD)
 ## Extending to Other Keyboards
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for adding new keyboard layouts.
+
+## Release
+
+Tag a commit with `v*` (e.g. `v1.0.0`) and push — the GitHub Actions [release workflow](.github/workflows/release.yml) builds and publishes a bundled `.app` automatically.
 
 ## License
 
