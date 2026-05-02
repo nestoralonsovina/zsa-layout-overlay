@@ -100,6 +100,11 @@ void zsa_hid_bridge_close(void *raw_bridge) {
     free(bridge);
 }
 
+bool zsa_hid_bridge_has_device(void *raw_bridge) {
+    zsa_hid_bridge_t *bridge = (zsa_hid_bridge_t *)raw_bridge;
+    return bridge && bridge->device != NULL;
+}
+
 int32_t zsa_hid_bridge_write_command(void *raw_bridge, uint8_t command) {
     zsa_hid_bridge_t *bridge = (zsa_hid_bridge_t *)raw_bridge;
     if (!bridge || !bridge->device) {

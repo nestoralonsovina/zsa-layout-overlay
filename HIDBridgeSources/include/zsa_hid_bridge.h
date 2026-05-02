@@ -1,6 +1,7 @@
 #ifndef ZSA_HID_BRIDGE_H
 #define ZSA_HID_BRIDGE_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -9,6 +10,7 @@ extern "C" {
 
 void *zsa_hid_bridge_open_first_voyager(void);
 void zsa_hid_bridge_close(void *bridge);
+bool zsa_hid_bridge_has_device(void *bridge);
 
 int32_t zsa_hid_bridge_write_command(void *bridge, uint8_t command);
 int32_t zsa_hid_bridge_get_feature_report(void *bridge, uint8_t report_id, uint8_t *buffer, int32_t length);

@@ -19,7 +19,6 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
     @MainActor
     func start(feeding model: OverlayViewModel) async {
         self.model = model
-        log("Starting hidapi live bridge")
         guard hidProfile != nil else {
             await setStatus(connectionState: "no hid profile", statusText: "No HID profile configured for this keyboard.")
             await reportError(.warning("No HID profile configured"))
@@ -35,6 +34,12 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
                 return
             }
             self.bridge = opened
+
+            guard zsa_hid_bridge_has_device(opened) else {
+                await setStatus(connectionState: "no device", statusText: "No ZSA device detected. Connect your keyboard for live layout updates.")
+                return
+            }
+
             log("Opened hidapi bridge")
             if zsa_hid_bridge_write_command(opened, 0) < 0 {
                 log("Handshake [0] failed: \(lastError(from: opened))")
@@ -49,6 +54,10 @@ final class ZSAHIDDataSource: KeyboardDataSource, @unchecked Sendable {
             return
         }
 
+        guard zsa_hid_bridge_has_device(bridge) else {
+            await setStatus(connectionState: "no device", statusText: "No ZSA device detected.")
+            return
+        }
         await runReadLoop(using: bridge)
     }
 
