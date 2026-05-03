@@ -2,6 +2,8 @@
 
 A macOS overlay that renders a live keyboard layout above all applications without intercepting clicks.
 
+![Screenshot](assets/screenshot.png)
+
 [![CI](https://github.com/nestoralonsovina/zsa-layout-overlay/actions/workflows/ci.yml/badge.svg)](https://github.com/nestoralonsovina/zsa-layout-overlay/actions/workflows/ci.yml)
 
 ## Features
